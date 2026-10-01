@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>touchpath — multi-touch attribution</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📊</text></svg>">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>touchpath</h1>
+  <p>Multi-touch attribution for marketing measurement. Upload your event data or run the
+     built-in sample, then compare how six models split the credit — including Markov removal
+     effects and Shapley values.</p>
+  <p class="links">
+    <a href="https://github.com/bhushanladde02/touchpath">Source on GitHub</a>
+    <a href="/docs">API docs</a>
+  </p>
+</header>
+
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+<form class="card" method="post" action="/analyze" enctype="multipart/form-data">
+  <h2>Run an analysis</h2>
+  <p class="sub">Events need <code>user_id</code>, <code>timestamp</code>, <code>event_type</code>
+     and <code>channel</code>; conversions also need <code>revenue</code>. JSON, JSONL, CSV or TSV.</p>
+
+  <div class="radios">
+    <label><input type="radio" name="source" value="demo" checked> Use demo data</label>
+    <label><input type="radio" name="source" value="upload"> Upload a file</label>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <span>Event file</span>
+      <input type="file" name="events_file" accept=".json,.jsonl,.ndjson,.csv,.tsv">
+    </div>
+    <div class="field">
+      <span>Demo users</span>
+      <input type="number" name="demo_users" value="20000" min="500" max="100000" step="500">
+    </div>
+    <div class="field">
+      <span>Lookback (days)</span>
+      <input type="number" name="lookback_days" value="{{ lookback_days or 30 }}" min="1" max="365">
+    </div>
+  </div>
+
+  <fieldset style="margin-top:18px">
+    <legend>Models</legend>
+    <div class="checks">
+      {% for m in models %}
+      <label><input type="checkbox" name="models" value="{{ m }}"
+        {% if not selected or m in selected %}checked{% endif %}> {{ labels[m] }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <div style="margin-top:18px"><button type="submit">Run attribution</button></div>
+</form>
+
+{% if result %}
+
+<div class="tiles" style="margin-bottom:18px">
+  <div class="tile">
+    <div class="label">Conversions</div>
+    <div class="value">{{ "{:,}".format(result.paths.conversions) }}</div>
+    <div class="note">{{ "{:,}".format(result.paths.direct_conversions) }} direct</div>
+  </div>
+  <div class="tile">
+    <div class="label">Revenue</div>
+    <div class="value">${{ "{:,.0f}".format(result.paths.revenue) }}</div>
+    <div class="note">attributed in full by every model</div>
+  </div>
+  <div class="tile">
+    <div class="label">Avg path length</div>
+    <div class="value">{{ result.paths.avg_path_length }}</div>
+    <div class="note">max {{ result.paths.max_path_length }} · {{ result.lookback_days }}-day window</div>
+  </div>
+  <div class="tile">
+    <div class="label">Channels</div>
+    <div class="value">{{ result.paths.unique_channels }}</div>
+    <div class="note">{{ result.dataset }}</div>
+  </div>
+  <div class="tile">
+    <div class="label">Rejected rows</div>
+    <div class="value">{{ result.ingest.reject_rate }}%</div>
+    <div class="note">{{ "{:,}".format(result.ingest.rejected) }} of {{ "{:,}".format(result.ingest.total) }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Revenue share by model</h2>
+  <p class="sub">Each model splits the same revenue differently. The wider the spread for a channel,
+     the more your budget decision depends on which model you trust.</p>
+  <div class="legend" id="legend"></div>
+  <div class="chart-wrap" id="shareChart"></div>
+</div>
+
+<div class="split">
+  <div class="card">
+    <h2>Model disagreement</h2>
+    <p class="sub">Percentage-point spread between the highest and lowest model for each channel.</p>
+    <table>
+      <thead><tr><th>Channel</th><th>Spread</th><th>Read</th></tr></thead>
+      <tbody>
+      {% for channel, value in result.spread.items() %}
+        <tr>
+          <td>{{ channel }}</td>
+          <td>{{ value }} pp</td>
+          <td>
+            {% if value >= 8 %}<span class="pill bad">model-dependent</span>
+            {% elif value >= 4 %}<span class="pill warn">some spread</span>
+            {% else %}<span class="pill good">stable</span>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Ingestion</h2>
+    <p class="sub">Rejected rows are counted by cause, never dropped silently.</p>
+    {% if result.ingest.reasons %}
+    <table>
+      <thead><tr><th>Reason</th><th>Rows</th></tr></thead>
+      <tbody>
+      {% for row in result.ingest.reasons %}
+        <tr><td>{{ row.reason }}</td><td>{{ "{:,}".format(row.count) }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="muted">Every row parsed cleanly.</p>{% endif %}
+
+    {% if result.markov_removal_effects %}
+    <h2 style="margin-top:22px">Markov removal effects</h2>
+    <p class="sub">Share of conversion probability lost if the channel did not exist.</p>
+    <table>
+      <thead><tr><th>Channel</th><th>Removal effect</th></tr></thead>
+      <tbody>
+      {% for channel, effect in result.markov_removal_effects.items() %}
+        <tr><td>{{ channel }}</td><td>{{ "%.1f"|format(effect * 100) }}%</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Full table</h2>
+  <p class="sub">Revenue share (%) per channel per model{% if result.ground_truth %}, against the
+     simulator's true channel influence{% endif %}.</p>
+  <details open>
+    <summary>Show numbers</summary>
+    <table>
+      <thead>
+        <tr>
+          <th>Channel</th>
+          {% if result.ground_truth %}<th>Truth</th>{% endif %}
+          {% for s in result.series %}<th>{{ s.label }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for channel in result.channels %}
+        {% set ci = loop.index0 %}
+        <tr>
+          <td>{{ channel }}</td>
+          {% if result.ground_truth %}<td>{{ result.ground_truth[ci] }}%</td>{% endif %}
+          {% for s in result.series %}<td>{{ s.share[ci] }}%</td>{% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </details>
+</div>
+
+<div class="card">
+  <h2>Incrementality check</h2>
+  <p class="sub">Attribution divides credit for conversions that already happened. A holdout test
+     says how many the channel actually caused.</p>
+  <div class="row">
+    <div class="field"><span>Treatment users</span><input type="number" id="tu" value="100000"></div>
+    <div class="field"><span>Treatment conversions</span><input type="number" id="tc" value="2300"></div>
+    <div class="field"><span>Control users</span><input type="number" id="cu" value="100000"></div>
+    <div class="field"><span>Control conversions</span><input type="number" id="cc" value="2000"></div>
+    <div class="field"><span>&nbsp;</span><button type="button" id="incBtn">Calculate</button></div>
+  </div>
+  <div id="incOut" style="margin-top:16px"></div>
+</div>
+
+{% endif %}
+
+<footer>
+  Built by <a href="https://github.com/bhushanladde02">Bhushan Ladde</a> · MIT licensed ·
+  models: first, last, linear, position, time-decay, Markov removal effect, Shapley value
+</footer>
+
+</div>
+
+<script id="payload" type="application/json">{{ result_json | default('null') | safe }}</script>
+<script src="/static/dashboard.js"></script>
+</body>
+</html>

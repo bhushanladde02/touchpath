@@ -1,0 +1,12 @@
+# One-click deploy on Render (free tier works).
+services:
+  - type: web
+    name: touchpath
+    runtime: python
+    plan: free
+    buildCommand: pip install -e ".[web]"
+    startCommand: uvicorn touchpath.web.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"

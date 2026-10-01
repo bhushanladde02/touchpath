@@ -10,3 +10,6 @@ dist/
 data/
 *.duckdb
 *.parquet
+
+# generated sample data
+events.json

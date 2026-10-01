@@ -105,6 +105,16 @@ def cmd_sample_size(args):
     print(f"{needed:,} users per group to detect a {args.lift:.0%} relative lift")
 
 
+def cmd_serve(args):
+    try:
+        import uvicorn
+    except ImportError:
+        print("the web dashboard needs the web extras: pip install -e '.[web]'")
+        return
+    print(f"touchpath dashboard on http://{args.host}:{args.port}")
+    uvicorn.run("touchpath.web.app:app", host=args.host, port=args.port, reload=args.reload)
+
+
 def cmd_demo(args):
     print("generating synthetic journeys with known ground truth...\n")
     records, truth = generate_events(users=args.users, corruption_rate=0.03, seed=11)
@@ -180,6 +190,12 @@ def main(argv=None) -> int:
     p.add_argument("--confidence", type=float, default=0.95, choices=[0.80, 0.90, 0.95, 0.99])
     p.add_argument("--power", type=float, default=0.80, choices=[0.80, 0.90, 0.95])
     p.set_defaults(func=cmd_sample_size)
+
+    p = sub.add_parser("serve", help="run the web dashboard")
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--reload", action="store_true")
+    p.set_defaults(func=cmd_serve)
 
     p = sub.add_parser("demo", help="end to end run on synthetic data")
     p.add_argument("--users", type=int, default=20000)

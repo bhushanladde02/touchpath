@@ -104,6 +104,54 @@ touchpath sample-size --baseline 0.02 --lift 0.10
 
 ---
 
+## Web dashboard
+
+```bash
+pip install -e ".[web]"
+touchpath serve          # http://127.0.0.1:8000
+```
+
+Upload a JSON/JSONL/CSV/TSV event file or run the built-in sample, pick a lookback
+window and the models to compare, and the dashboard shows:
+
+- headline stats — conversions, revenue, average path length, reject rate
+- a grouped bar chart of revenue share per channel for every model, drawn as
+  inline SVG with no charting library or CDN dependency
+- **model disagreement** — the percentage-point spread per channel, which is the
+  number that tells you how much your budget decision rests on model choice
+- the ingestion reject breakdown by cause
+- Markov removal effects
+- a full table view (so nothing is conveyed by colour alone)
+- an incrementality calculator wired to the holdout endpoint
+
+Dark mode is a selected palette, not an inverted one, and the categorical colours
+are validated for colour-vision deficiency separation.
+
+### JSON API
+
+```bash
+curl -X POST localhost:8000/api/analyze \
+  -H 'content-type: application/json' \
+  -d '{"events": [...], "lookback_days": 30, "models": ["last", "markov", "shapley"]}'
+
+curl -X POST localhost:8000/api/incrementality \
+  -H 'content-type: application/json' \
+  -d '{"treatment_users": 100000, "treatment_conversions": 2300,
+       "control_users": 100000, "control_conversions": 2000}'
+```
+
+Interactive docs at `/docs`, liveness at `/healthz`.
+
+### Deploy
+
+```bash
+docker build -t touchpath . && docker run -p 8000:8000 touchpath
+```
+
+`render.yaml` and `Procfile` are included for Render / Railway / Fly.
+
+---
+
 ## Validation
 
 `touchpath demo` generates journeys from known influence weights, runs every model, and scores each against that ground truth. A representative run (20,000 users, 3% corrupted records):
@@ -152,10 +200,10 @@ Attribution itself is cheap; ingestion and path construction dominate, which is 
 
 ```bash
 pip install -e ".[dev]"
-pytest -q          # 58 tests
+pytest -q          # 69 tests
 ```
 
-Tests cover timestamp parsing across formats, rejection reasons, vendor field mapping, lookback windows, cross-user isolation, model correctness against hand-computed values, revenue conservation, Shapley sampling convergence, incrementality statistics against simulated data with known lift, and the CLI end to end.
+Tests cover the web layer end to end (dashboard render, uploads, API validation), timestamp parsing across formats, rejection reasons, vendor field mapping, lookback windows, cross-user isolation, model correctness against hand-computed values, revenue conservation, Shapley sampling convergence, incrementality statistics against simulated data with known lift, and the CLI end to end.
 
 ---
 
