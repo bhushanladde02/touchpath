@@ -178,6 +178,9 @@ docker build -t touchpath . && docker run -p 8000:8000 touchpath
 
 `render.yaml` and `Procfile` are included for Render / Railway / Fly.
 
+For a permanent deployment on a free Oracle Cloud instance with a real hostname
+and HTTPS — no cold starts, no sleeping — see [DEPLOY.md](DEPLOY.md).
+
 ---
 
 ## Validation
