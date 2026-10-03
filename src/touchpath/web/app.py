@@ -25,6 +25,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from .. import datasets as sample_data
 from ..generate import generate_events
 from ..incrementality import holdout_test
 from ..ingest import ingest_records
@@ -144,12 +145,53 @@ def analyse(records, lookback_days: int, model_names, ground_truth=None) -> dict
     return payload
 
 
+_sample_cache: dict[str, tuple[list, dict]] = {}
+
+
+def load_sample(slug: str):
+    """Build a named sample, memoised. Seeds are fixed, so this is stable."""
+    if slug not in _sample_cache:
+        try:
+            records, ground_truth, _ = sample_data.build(slug)
+        except KeyError:
+            raise HTTPException(404, f"no sample dataset called {slug!r}")
+        _sample_cache[slug] = (records, ground_truth)
+    return _sample_cache[slug]
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"result": None, "models": ALL_MODELS, "labels": MODEL_LABELS},
+        {
+            "result": None,
+            "models": ALL_MODELS,
+            "labels": MODEL_LABELS,
+            "samples": sample_data.catalogue(),
+        },
+    )
+
+
+@app.get("/about", response_class=HTMLResponse)
+def about(request: Request):
+    return templates.TemplateResponse(request, "about.html", {})
+
+
+@app.get("/datasets", response_class=HTMLResponse)
+def datasets_page(request: Request):
+    return templates.TemplateResponse(
+        request, "datasets.html", {"samples": sample_data.catalogue()}
+    )
+
+
+@app.get("/datasets/{slug}.json")
+def download_sample(slug: str):
+    """The raw records, as a file. Same data the dashboard runs on."""
+    records, _ = load_sample(slug)
+    return JSONResponse(
+        records,
+        headers={"Content-Disposition": f'attachment; filename="{slug}.json"'},
     )
 
 
@@ -160,6 +202,7 @@ async def analyze_form(
     events_file: UploadFile | None = File(None),
     lookback_days: int = Form(30),
     demo_users: int = Form(20000),
+    sample: str = Form(""),
     models: list[str] = Form(default=list(ALL_MODELS)),
 ):
     selected = [name for name in models if name in ALL_MODELS] or ["last"]
@@ -174,6 +217,9 @@ async def analyze_form(
                 raise HTTPException(400, "choose a file, or run on the demo data")
             records = parse_upload(await events_file.read(), events_file.filename)
             dataset = events_file.filename
+        elif source == "sample":
+            records, ground_truth = load_sample(sample)
+            dataset = sample_data.BY_SLUG[sample].name
         else:
             users = max(500, min(demo_users, 100_000))
             records, ground_truth = generate_events(users=users, corruption_rate=0.03, seed=11)
@@ -195,6 +241,8 @@ async def analyze_form(
             "labels": MODEL_LABELS,
             "selected": selected,
             "lookback_days": lookback_days,
+            "samples": sample_data.catalogue(),
+            "chosen_sample": sample,
         },
     )
 

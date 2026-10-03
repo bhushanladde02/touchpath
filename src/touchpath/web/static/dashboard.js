@@ -104,7 +104,7 @@
         fill: text,
         "font-size": 11,
       });
-      label.textContent = channel.length > 13 ? channel.slice(0, 12) + "…" : channel;
+      label.textContent = channel.length > 17 ? channel.slice(0, 16) + "…" : channel;
       svg.appendChild(label);
     });
 

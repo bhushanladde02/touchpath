@@ -16,6 +16,8 @@
      built-in sample, then compare how six models split the credit — including Markov removal
      effects and Shapley values.</p>
   <p class="links">
+    <a href="/about">About</a>
+    <a href="/datasets">Sample data</a>
     <a href="https://github.com/bhushanladde02/touchpath">Source on GitHub</a>
     <a href="/docs">API docs</a>
   </p>
@@ -30,6 +32,7 @@
 
   <div class="radios">
     <label><input type="radio" name="source" value="demo" checked> Use demo data</label>
+    <label><input type="radio" name="source" value="sample"> Sample dataset</label>
     <label><input type="radio" name="source" value="upload"> Upload a file</label>
   </div>
 
@@ -37,6 +40,14 @@
     <div class="field">
       <span>Event file</span>
       <input type="file" name="events_file" accept=".json,.jsonl,.ndjson,.csv,.tsv">
+    </div>
+    <div class="field">
+      <span>Sample dataset</span>
+      <select name="sample">
+        {% for s in samples %}
+        <option value="{{ s.slug }}" {% if chosen_sample == s.slug %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
     </div>
     <div class="field">
       <span>Demo users</span>

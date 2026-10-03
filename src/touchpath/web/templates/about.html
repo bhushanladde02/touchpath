@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — touchpath</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📊</text></svg>">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>About touchpath</h1>
+  <p>An open-source multi-touch attribution engine, and a place to run your own
+     marketing data through six models at once without buying anything or signing
+     up for anything.</p>
+  <p class="links">
+    <a href="/">Dashboard</a>
+    <a href="/datasets">Sample data</a>
+    <a href="https://github.com/bhushanladde02/touchpath">Source on GitHub</a>
+    <a href="/docs">API docs</a>
+  </p>
+</header>
+
+<div class="card">
+  <h2>The problem</h2>
+  <p class="sub">Why another attribution tool.</p>
+  <p>Most attribution stops at last touch. Last touch is cheap, explainable and
+     systematically wrong: it hands every conversion to the final click, which
+     flatters the bottom of the funnel and starves whatever created the demand in
+     the first place.</p>
+  <p>The models that answer the question people actually have — <em>what happens to
+     conversions if we turn this channel off</em> — are the counterfactual ones:
+     Markov-chain removal effects and Shapley values. They are well documented in
+     the literature and rare in open source, usually sitting behind a platform that
+     wants your data, your budget and an annual contract before it will tell you
+     anything.</p>
+  <p>touchpath implements both, alongside the four common heuristics, so they can
+     be run on identical paths and compared honestly.</p>
+</div>
+
+<div class="card">
+  <h2>What you can do here</h2>
+  <p class="sub">All of it free, and none of it stored.</p>
+  <ul>
+    <li><b>Run your own event data</b> through six attribution models at once, and
+        see where they disagree. The disagreement is the useful part: a channel
+        every model treats the same way is a safe budget decision, and a channel
+        with a fifteen-point spread is a decision resting on a modelling
+        assumption nobody chose deliberately.</li>
+    <li><b>Try it first on sample data with a known answer key.</b> Real attribution
+        data has no ground truth, so you can never tell which model was closer.
+        The <a href="/datasets">sample datasets</a> are simulated from explicit
+        channel influence weights, so the right answer is recorded and every model
+        is scored against it.</li>
+    <li><b>Check whether any of it was incremental.</b> Attribution only ever divides
+        credit for conversions that already happened. The holdout calculator takes
+        a treatment and control group and tells you the lift, the confidence
+        interval and whether it is significant — and how much of your attributed
+        credit was real.</li>
+    <li><b>See what your feed is actually delivering.</b> Malformed rows are counted
+        and reported by cause, never dropped silently.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Your data</h2>
+  <p class="sub">The short version: it is not kept.</p>
+  <p>Uploaded files are parsed in memory, analysed, and discarded when the request
+     finishes. Nothing is written to disk, nothing is logged, there is no account,
+     no cookie and no database. Reload the page and it is gone.</p>
+  <p>If you would rather not upload anything at all, that is the better option
+     anyway — <code>pip install touchpath</code> and run the whole thing locally, or
+     <code>docker build</code> from the repository. The hosted dashboard exists so you
+     can see what it does before deciding whether it is worth installing.</p>
+</div>
+
+<div class="card">
+  <h2>Bring your own data</h2>
+  <p class="sub">What the format needs to be.</p>
+  <p>JSON, JSONL, CSV or TSV. Each row is one event. Touches need
+     <code>user_id</code>, <code>timestamp</code>, <code>event_type</code> and
+     <code>channel</code>; conversions need <code>user_id</code>,
+     <code>timestamp</code>, an <code>event_type</code> of <code>purchase</code> or
+     <code>conversion</code>, and <code>revenue</code>.</p>
+  <p>Timestamps are forgiving — eleven common formats, plus epoch seconds and
+     milliseconds. If your vendor uses different field names, the Python API takes a
+     <code>FieldMap</code> with dotted paths for nested payloads, so you do not have to
+     reshape the file first.</p>
+  <p>If you want real-world data rather than simulated data, Criteo publish a large
+     public attribution dataset, and most ad platforms will export a raw event log
+     you can feed in directly.</p>
+</div>
+
+<div class="card">
+  <h2>Why it is free</h2>
+  <p>Because the interesting part of attribution is not the code — it is being able
+     to check the answer. A measurement tool you cannot inspect is just an opinion
+     with a dashboard. Everything here is MIT licensed, the models are implemented
+     in readable Python, and the validation suite checks each one against
+     hand-computed values: a symmetric channel pair must receive identical Shapley
+     credit, a null player must receive none, a single-channel chain must have a
+     removal effect of exactly 1.0, and every model must conserve revenue to the
+     cent.</p>
+  <p>If you find a case where it is wrong, the repository takes issues.</p>
+</div>
+
+<footer>
+  Built by <a href="https://github.com/bhushanladde02">Bhushan Ladde</a> · MIT licensed ·
+  <a href="/">run an analysis</a>
+</footer>
+
+</div>
+</body>
+</html>

@@ -131,6 +131,38 @@ def path_stats(paths):
     }
 
 
+def non_converting_journeys(events, dedupe_consecutive: bool = True):
+    """Channel sequences for users who never converted.
+
+    The Markov removal effect is only honest when it can see these. Computed
+    on converting paths alone, a channel that appears constantly in dead ends
+    looks valuable, because every path it sits in ended in a conversion by
+    definition. Passing these to markov.attribute is what lets the model
+    penalise it instead.
+
+    Returns a list of channel tuples, one per non-converting user.
+    """
+    converted = {event.user_id for event in events if event.is_conversion}
+    index = _index_touches(events)
+
+    journeys: list[tuple[str, ...]] = []
+    for user, (_, labels) in index.items():
+        if user in converted:
+            continue
+
+        channels = labels
+        if dedupe_consecutive:
+            collapsed: list[str] = []
+            for channel in labels:
+                if not collapsed or collapsed[-1] != channel:
+                    collapsed.append(channel)
+            channels = collapsed
+
+        if channels:
+            journeys.append(tuple(channels))
+    return journeys
+
+
 def channel_universe(paths):
     """Every channel seen, plus 'direct' when some conversions had no touch."""
     channels = sorted({channel for p in paths for channel in p.channels})

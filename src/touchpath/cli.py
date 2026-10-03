@@ -115,6 +115,21 @@ def cmd_serve(args):
     uvicorn.run("touchpath.web.app:app", host=args.host, port=args.port, reload=args.reload)
 
 
+def cmd_datasets(args):
+    from .datasets import SAMPLES, write_all
+
+    if args.list:
+        for sample in SAMPLES:
+            print(f"{sample.slug:<20}{sample.name}")
+            print(f"{'':<20}{sample.summary}")
+        return
+
+    written = write_all(args.out)
+    print(f"wrote {len(written)} sample datasets to {args.out}/")
+    for path in written:
+        print(f"  {path.name:<24}{path.stat().st_size / 1_000_000:>6.1f} MB")
+
+
 def cmd_demo(args):
     print("generating synthetic journeys with known ground truth...\n")
     records, truth = generate_events(users=args.users, corruption_rate=0.03, seed=11)
@@ -196,6 +211,11 @@ def main(argv=None) -> int:
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--reload", action="store_true")
     p.set_defaults(func=cmd_serve)
+
+    p = sub.add_parser("datasets", help="write the sample datasets to disk")
+    p.add_argument("--out", default="datasets", help="output directory")
+    p.add_argument("--list", action="store_true", help="list the samples and exit")
+    p.set_defaults(func=cmd_datasets)
 
     p = sub.add_parser("demo", help="end to end run on synthetic data")
     p.add_argument("--users", type=int, default=20000)

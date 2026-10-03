@@ -104,12 +104,40 @@ touchpath sample-size --baseline 0.02 --lift 0.10
 
 ---
 
+## Sample datasets
+
+Real attribution data has no answer key, so you can compare models to each other
+but never tell which one was closer. These five are simulated from explicit
+per-channel influence weights, so the truth is recorded and every model is scored
+against it. Seeds are fixed — the same slug always produces the same data.
+
+| Dataset | What it shows |
+|---|---|
+| `retail-baseline` | A balanced mix where the models broadly agree. Start here. |
+| `last-touch-trap` | A channel in two thirds of journeys with 7% true influence. Last touch gives it 35% — and so does Markov removal, because prevalence is not influence and no model separates them. Only an experiment does. |
+| `long-consideration` | Long paths, where position-based, time-decay and linear stop agreeing. |
+| `short-paths` | Mostly one or two touches. Every model converges; the honest case for last touch. |
+| `messy-feed` | 15% damaged rows — broken timestamps, missing ids, text revenue. Read the reject breakdown, not the chart. |
+
+```bash
+touchpath datasets --list
+touchpath datasets --out datasets/
+```
+
+They are also downloadable from the running dashboard at `/datasets`, as plain
+JSON event records.
+
+---
+
 ## Web dashboard
 
 ```bash
 pip install -e ".[web]"
 touchpath serve          # http://127.0.0.1:8000
 ```
+
+Pages: `/` the dashboard, `/datasets` the sample data, `/about` what the project
+is for, `/docs` the API reference.
 
 Upload a JSON/JSONL/CSV/TSV event file or run the built-in sample, pick a lookback
 window and the models to compare, and the dashboard shows:
@@ -200,7 +228,7 @@ Attribution itself is cheap; ingestion and path construction dominate, which is 
 
 ```bash
 pip install -e ".[dev]"
-pytest -q          # 69 tests
+pytest -q          # 84 tests
 ```
 
 Tests cover the web layer end to end (dashboard render, uploads, API validation), timestamp parsing across formats, rejection reasons, vendor field mapping, lookback windows, cross-user isolation, model correctness against hand-computed values, revenue conservation, Shapley sampling convergence, incrementality statistics against simulated data with known lift, and the CLI end to end.

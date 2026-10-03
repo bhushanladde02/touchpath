@@ -13,3 +13,7 @@ data/
 
 # generated sample data
 events.json
+
+# IDE
+.idea/
+.vscode/

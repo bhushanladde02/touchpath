@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample data — touchpath</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📊</text></svg>">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Sample data</h1>
+  <p>Five datasets with a known answer key. Real attribution data has no ground
+     truth — you can compare models to each other, but never tell which one was
+     closer to right. These are simulated from explicit channel influence weights,
+     so the truth is recorded and every model gets scored against it.</p>
+  <p class="links">
+    <a href="/">Dashboard</a>
+    <a href="/about">About</a>
+    <a href="https://github.com/bhushanladde02/touchpath">Source on GitHub</a>
+  </p>
+</header>
+
+{% for s in samples %}
+<div class="card">
+  <h2>{{ s.name }}</h2>
+  <p class="sub">{{ s.summary }}</p>
+  <p>{{ s.shows }}</p>
+  {% if s.notes %}<p class="muted">{{ s.notes }}</p>{% endif %}
+
+  <table style="margin:16px 0 18px; max-width:460px">
+    <thead><tr><th>Users</th><th>Channels</th><th>Window</th><th>Damaged rows</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>{{ "{:,}".format(s.users) }}</td>
+        <td>{{ s.channels }}</td>
+        <td>{{ s.days }} days</td>
+        <td>{{ "%.0f"|format(s.corruption_rate * 100) }}%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="row">
+    <form method="post" action="/analyze">
+      <input type="hidden" name="source" value="sample">
+      <input type="hidden" name="sample" value="{{ s.slug }}">
+      <input type="hidden" name="lookback_days" value="30">
+      {% for m in ["last","first","linear","position","time_decay","markov","shapley"] %}
+      <input type="hidden" name="models" value="{{ m }}">
+      {% endfor %}
+      <button type="submit">Run this dataset</button>
+    </form>
+    <a class="muted" href="/datasets/{{ s.slug }}.json"
+       style="align-self:center">Download JSON</a>
+  </div>
+</div>
+{% endfor %}
+
+<div class="card">
+  <h2>Using them elsewhere</h2>
+  <p class="sub">They are ordinary event files, not a proprietary format.</p>
+  <p>Each download is a JSON array of event records with the field names the ingest
+     layer expects — <code>user_id</code>, <code>timestamp</code>,
+     <code>event_type</code>, <code>channel</code>, <code>revenue</code>. Load them into
+     anything.</p>
+  <p>To produce them locally instead of downloading, or to regenerate with different
+     parameters:</p>
+  <p><code>pip install -e "."</code> then <code>touchpath datasets --out datasets/</code></p>
+  <p>The seeds are fixed, so the same slug always produces the same data. A number
+     you quote from a sample stays true.</p>
+</div>
+
+<footer>
+  Built by <a href="https://github.com/bhushanladde02">Bhushan Ladde</a> · MIT licensed
+</footer>
+
+</div>
+</body>
+</html>
