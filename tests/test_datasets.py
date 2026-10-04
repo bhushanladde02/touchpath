@@ -93,13 +93,38 @@ def test_catalogue_matches_samples():
 
 
 def test_write_all(tmp_path):
+    """Two files per sample: the records, and the answer key beside them."""
     written = datasets.write_all(tmp_path)
-    assert len(written) == len(datasets.SAMPLES)
+    assert len(written) == len(datasets.SAMPLES) * 2
+
     for path in written:
         assert path.exists()
-        with open(path) as handle:
+
+    for sample in datasets.SAMPLES:
+        with open(tmp_path / sample.filename) as handle:
             records = json.load(handle)
         assert isinstance(records, list) and records
+
+        with open(tmp_path / sample.truth_filename) as handle:
+            truth = json.load(handle)
+        assert truth["dataset"] == sample.slug
+        assert abs(sum(truth["ground_truth"].values()) - 1.0) < 0.01
+
+
+def test_truth_payload_explains_itself():
+    """A bare channel-to-number mapping tells a downloader nothing, so the
+    explanation has to travel with the file."""
+    _, truth, _ = datasets.build("last-touch-trap")
+    payload = datasets.truth_payload("last-touch-trap", truth)
+
+    for key in ("dataset", "name", "what_this_is", "measure", "ground_truth",
+                "how_to_score", "caveat"):
+        assert payload[key], f"{key} must be populated"
+
+    assert payload["ground_truth"] == truth
+    assert payload["dataset"] == "last-touch-trap"
+    # the scoring note must point at the matching records file
+    assert "last-touch-trap.json" in payload["how_to_score"]
 
 
 # ----------------------------------------------------------------- web layer
@@ -130,6 +155,62 @@ def test_sample_download():
 
 def test_unknown_sample_download_is_404():
     assert client.get("/datasets/nope.json").status_code == 404
+
+
+def test_answer_key_download():
+    response = client.get("/datasets/last-touch-trap.truth.json")
+    assert response.status_code == 200
+    assert "attachment" in response.headers["content-disposition"]
+    assert "last-touch-trap.truth.json" in response.headers["content-disposition"]
+
+    payload = response.json()
+    truth = payload["ground_truth"]
+    assert abs(sum(truth.values()) - 1.0) < 0.01
+    # the point of this dataset: everywhere, and worth almost nothing
+    assert truth["branded_search"] < 0.12
+
+
+def test_answer_key_matches_what_the_dashboard_scores_against():
+    """If the download and the Truth column could disagree, the answer key
+    would be worse than no answer key."""
+    for sample in datasets.SAMPLES:
+        downloaded = client.get(f"/datasets/{sample.slug}.truth.json").json()
+        _, built, _ = datasets.build(sample.slug)
+        assert downloaded["ground_truth"] == built
+
+
+def test_documented_answer_key_figures_are_still_true():
+    """The sample data page and docs/data.rst quote these shares verbatim.
+
+    Seeds are fixed, so they cannot drift by chance — but a change to the
+    generator would silently make published numbers wrong. Pin them.
+    """
+    _, truth, _ = datasets.build("last-touch-trap")
+    documented = {
+        "paid_social": 0.3882,
+        "video": 0.2468,
+        "display": 0.1841,
+        "email": 0.1105,
+        "branded_search": 0.0704,
+    }
+    assert truth == documented, (
+        "ground truth changed — update the table in datasets.html, the JSON "
+        "block in docs/data.rst, and the figures quoted in both"
+    )
+
+
+def test_unknown_answer_key_is_404():
+    assert client.get("/datasets/nope.truth.json").status_code == 404
+
+
+def test_datasets_page_offers_both_downloads():
+    response = client.get("/datasets")
+    assert response.status_code == 200
+    for sample in datasets.SAMPLES:
+        assert f"/datasets/{sample.slug}.json" in response.text
+        assert f"/datasets/{sample.slug}.truth.json" in response.text
+    # and explains why they are two files rather than one
+    assert "one row per" in response.text.lower()
 
 
 def test_analyze_runs_a_sample():

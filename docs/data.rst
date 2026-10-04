@@ -159,6 +159,85 @@ Real attribution data has no answer key. You can compare models to each other bu
 
 Seeds are fixed — the same slug always produces byte-identical data, so a figure quoted from a sample stays true.
 
+The answer key
+~~~~~~~~~~~~~~
+
+Each sample ships as **two** files, and the distinction matters.
+
+The **events file** is a log of what happened: one row per event, carrying ``user_id``, ``timestamp``, ``event_type``, ``channel`` and ``revenue``. Hundreds of thousands of rows. This is the model's input.
+
+The **answer key** is a handful of numbers — one per channel, the share of conversion influence that channel genuinely deserves, summing to 1.0:
+
+.. code:: json
+
+   {
+     "dataset": "last-touch-trap",
+     "measure": "share of true conversion influence, summing to 1.0",
+     "ground_truth": {
+       "branded_search": 0.0704,
+       "display": 0.1841,
+       "email": 0.1105,
+       "paid_social": 0.3882,
+       "video": 0.2468
+     }
+   }
+
+Why it is a separate file, not a column
+"""""""""""""""""""""""""""""""""""""""
+
+Two reasons, and the second is the real one.
+
+First, the shapes differ. The events file has one row per *event*; the answer has one row per *channel*. They do not fit in the same table.
+
+Second, and more fundamentally, the answer is not a property of any individual event. "Paid social deserves 38.8% of the credit" is not a fact about one impression on a particular Tuesday — it is a fact about the dataset as a whole. An event log has no column in which a statement about the entire log could sit. It is the same reason a ball-by-ball cricket scorecard has no *Man of the Match* column: that is a verdict over the whole innings, recorded separately.
+
+Keeping it out of the events download has a practical benefit too — the records stay a plain JSON array that loads into pandas, DuckDB, R or a spreadsheet without being unwrapped first.
+
+Where the answer actually comes from
+""""""""""""""""""""""""""""""""""""
+
+From the fact that the data was invented. Before any events existed, the rules were chosen — in :mod:`touchpath.datasets`, as a pair of numbers per channel:
+
+.. code:: python
+
+   channels={
+       "branded_search": (0.62, 0.04),   # in 62% of journeys, influence weight 0.04
+       "paid_social":    (0.34, 0.40),
+       "video":          (0.26, 0.34),
+       "display":        (0.30, 0.22),
+       "email":          (0.16, 0.24),
+   }
+
+The first number is how often the channel appears in a journey. The second is how much it moves the odds of converting. :func:`touchpath.generate.generate_events` accumulates the second number across converting journeys and normalises the totals to shares — that normalised result is the answer key.
+
+This is precisely what real data cannot have. Nobody chose the rules behind real customer behaviour, so nobody can look them up, and no vendor's number can be contradicted. Simulated data is the only setting in which an attribution model can be marked right or wrong, which is the entire justification for shipping these samples.
+
+What the answer key is *not*
+""""""""""""""""""""""""""""
+
+It is not how often each channel appeared. Influence and prevalence are different quantities, and conflating them is the most common way attribution reasoning fails. ``last-touch-trap`` exists to make that concrete: branded search appears in nearly two thirds of journeys and is worth about 7%. Every model in the suite over-credits it, counterfactual ones included, because a channel present in almost every journey looks indispensable to any method that asks what happens when it is removed.
+
+Scoring a model against it
+""""""""""""""""""""""""""
+
+.. code:: python
+
+   from touchpath import datasets
+   from touchpath.ingest import ingest_records
+   from touchpath.paths import build_paths
+   from touchpath.models import markov
+
+   records, truth, _ = datasets.build("last-touch-trap")
+   events, _ = ingest_records(records)
+   paths = build_paths(events, lookback_days=30)
+
+   predicted = markov.attribute(paths).share()
+   mae = sum(abs(predicted.get(c, 0) - t) for c, t in truth.items()) / len(truth)
+
+Mean absolute error across channels is the headline number. Check the **ranking** as well: a model that is a few points off everywhere but orders the channels correctly is more useful than one with lower error that puts the wrong channel on top, because budget decisions are taken from the ordering rather than the decimals.
+
+Running a sample from the dashboard does this comparison for you — the results table carries a ``Truth`` column beside the model columns.
+
 retail-baseline
 ~~~~~~~~~~~~~~~
 
@@ -234,8 +313,9 @@ Getting them
 .. code:: bash
 
    curl -O https://touchpath.onrender.com/datasets/last-touch-trap.json
+   curl -O https://touchpath.onrender.com/datasets/last-touch-trap.truth.json
 
-They are ordinary JSON arrays of event records. Nothing proprietary — load them into anything.
+The first is an ordinary JSON array of event records — nothing proprietary, load it into anything. The second is the answer key described above, carrying the per-channel shares plus a note on what the measure means and how to score against it.
 
 --------------
 

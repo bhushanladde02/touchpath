@@ -125,9 +125,15 @@ def cmd_datasets(args):
         return
 
     written = write_all(args.out)
-    print(f"wrote {len(written)} sample datasets to {args.out}/")
+    print(
+        f"wrote {len(SAMPLES)} sample datasets "
+        f"({len(written)} files: records plus answer key) to {args.out}/"
+    )
     for path in written:
-        print(f"  {path.name:<24}{path.stat().st_size / 1_000_000:>6.1f} MB")
+        size = path.stat().st_size
+        shown = f"{size / 1_000_000:>6.1f} MB" if size >= 100_000 else f"{size / 1_000:>6.1f} KB"
+        print(f"  {path.name:<30}{shown}")
+    print("\nEach .truth.json holds the per-channel shares a perfect model would produce.")
 
 
 def cmd_demo(args):

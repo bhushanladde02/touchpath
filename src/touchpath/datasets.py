@@ -42,6 +42,17 @@ class Sample:
     def filename(self) -> str:
         return f"{self.slug}.json"
 
+    @property
+    def truth_filename(self) -> str:
+        """The answer key sits beside the records, never inside them.
+
+        The records are one row per event; the truth is one number per channel,
+        so there is no column in the event table where it could live. Keeping
+        them apart also leaves the records a plain array that loads anywhere
+        without being unwrapped first.
+        """
+        return f"{self.slug}.truth.json"
+
 
 # (how often a channel appears in a journey, how much it moves conversion odds)
 SAMPLES: tuple[Sample, ...] = (
@@ -185,18 +196,76 @@ def build(slug: str):
 
 
 def write_all(out_dir) -> list[Path]:
-    """Materialise every sample as JSON into out_dir. Returns the paths written."""
+    """Materialise every sample into out_dir, two files each.
+
+    ``<slug>.json`` holds the event records; ``<slug>.truth.json`` holds the
+    answer key. A model scored outside this project needs both, so the CLI
+    writes both rather than leaving the truth only reachable from Python.
+
+    Args:
+        out_dir: Directory to write into. Created if absent.
+
+    Returns:
+        Every path written, records and answer keys together, in sample order.
+    """
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
 
     written = []
     for sample in SAMPLES:
-        records, _, _ = build(sample.slug)
+        records, ground_truth, _ = build(sample.slug)
+
         target = out / sample.filename
         with open(target, "w") as handle:
             json.dump(records, handle)
         written.append(target)
+
+        truth_target = out / sample.truth_filename
+        with open(truth_target, "w") as handle:
+            json.dump(truth_payload(sample.slug, ground_truth), handle, indent=2)
+        written.append(truth_target)
     return written
+
+
+def truth_payload(slug: str, ground_truth: dict) -> dict:
+    """The answer key as a self-describing object.
+
+    Downloaded on its own, a bare mapping of channel to number says nothing
+    about what the number measures, so the explanation travels with it.
+
+    Args:
+        slug: Which sample this answer key belongs to.
+        ground_truth: ``{channel: share of true influence}``, summing to 1.0.
+
+    Returns:
+        A JSON-serialisable dict carrying the shares and their explanation.
+    """
+    sample = BY_SLUG[slug]
+    return {
+        "dataset": slug,
+        "name": sample.name,
+        "what_this_is": (
+            "The true share of conversion influence per channel, recorded when "
+            "this dataset was simulated. Real attribution data has no equivalent "
+            "- nobody chose the rules behind real customer behaviour, so nobody "
+            "can look them up. That is the only reason these samples exist."
+        ),
+        "measure": "share of true conversion influence, summing to 1.0",
+        "ground_truth": ground_truth,
+        "how_to_score": (
+            f"Run your model on the records in {sample.filename}, normalise its "
+            "output to shares, and compare per channel. Mean absolute error "
+            "against these values is the headline number; also check whether the "
+            "model ranks the channels in the right order, which matters more for "
+            "budgeting than the decimals."
+        ),
+        "caveat": (
+            "Influence here is causal by construction: how much the channel "
+            "moved the odds of converting, not how often it appeared. A channel "
+            "can be in most journeys and still be worth almost nothing, which is "
+            "what last-touch-trap demonstrates."
+        ),
+    }
 
 
 def catalogue() -> list[dict]:

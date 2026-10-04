@@ -200,6 +200,28 @@ def datasets_page(request: Request):
     )
 
 
+@app.get("/datasets/{slug}.truth.json")
+def download_truth(slug: str):
+    """The answer key for one sample.
+
+    A separate file from the records on purpose. The records are one row per
+    event; the answer is one number per channel, so there is no column in the
+    event table where it could live. Kept out of the records download as well,
+    so the records stay a plain array that loads into anything without being
+    reshaped first.
+
+    This route must stay declared **above** ``/datasets/{slug}.json``. Routes
+    match in declaration order, and the looser pattern would otherwise swallow
+    this one with ``slug="<name>.truth"``, which fails as an unknown sample and
+    returns 404. ``test_answer_key_download`` guards the ordering.
+    """
+    _, ground_truth = load_sample(slug)
+    return JSONResponse(
+        sample_data.truth_payload(slug, ground_truth),
+        headers={"Content-Disposition": f'attachment; filename="{slug}.truth.json"'},
+    )
+
+
 @app.get("/datasets/{slug}.json")
 def download_sample(slug: str):
     """The raw records, as a file. Same data the dashboard runs on."""

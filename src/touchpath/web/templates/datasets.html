@@ -20,6 +20,77 @@
      so the truth is recorded and every model gets scored against it.</p>
 </header>
 
+<div class="card">
+  <h2>Two files per dataset, and why</h2>
+  <p class="sub">The events, and the answer key. They are separate on purpose.</p>
+
+  <p><b>The events file</b> is a log of what happened. One line per event:
+     who, when, what they did, which channel, how much money. Hundreds of
+     thousands of lines. This is what you feed into a model.</p>
+
+  <p><b>The answer key</b> is a handful of lines — one per channel, with the
+     share of influence that channel genuinely deserves, totalling 100%. This is
+     the real one for <b>The last-touch trap</b>:</p>
+
+  <table class="prose" style="max-width:340px; margin:14px 0 18px">
+    <tbody>
+      <tr><td>paid_social</td><td>38.8%</td></tr>
+      <tr><td>video</td><td>24.7%</td></tr>
+      <tr><td>display</td><td>18.4%</td></tr>
+      <tr><td>email</td><td>11.1%</td></tr>
+      <tr><td>branded_search</td><td>7.0%</td></tr>
+    </tbody>
+  </table>
+
+  <p>It is a second file rather than an extra column because the two have
+     different shapes. The events file has one row per <em>event</em>; the answer
+     has one row per <em>channel</em>. And the answer is not a property of any
+     single event — "paid social deserves 38.8%" is not true of one particular ad
+     impression on a Tuesday, it is true of the dataset as a whole. There is no
+     column in a log of events where a statement about the whole log could sit.</p>
+
+  <details>
+    <summary>Where does the answer come from, if real data has no answer?</summary>
+    <p>From the fact that this data was invented. Before any events existed,
+       the rules were chosen: <em>paid social will be powerful, branded search
+       will appear constantly and do almost nothing.</em> Then the generator
+       manufactured events obeying those rules. Those original choices are the
+       answer key, and they live in
+       <code>src/touchpath/datasets.py</code> as two numbers per channel — how
+       often it appears, and how strongly it moves the odds of converting.</p>
+    <p>That is exactly what real data can never have. Nobody chose the rules
+       behind real customer behaviour, so nobody can look them up, and no
+       vendor can be contradicted when they tell you their number. It is the
+       whole reason simulated data is worth the effort: it is the only setting
+       in which an attribution model can actually be marked right or wrong.</p>
+  </details>
+
+  <details>
+    <summary>How to score a model against it</summary>
+    <p>Run your model on the events, convert its output to shares of the total,
+       and compare channel by channel. Mean absolute error across channels is
+       the headline number.</p>
+    <p>Also check the <b>ordering</b>. A model that is off by a few points
+       everywhere but ranks the channels correctly is more useful for budgeting
+       than one with a lower error that puts the wrong channel on top — because
+       budget decisions are made from the ranking, not the decimals.</p>
+    <p>If you run a dataset here rather than downloading it, this comparison is
+       done for you: the results table shows a <b>Truth</b> column beside the
+       seven model columns.</p>
+  </details>
+
+  <details>
+    <summary>One thing the answer key is not</summary>
+    <p>It is not how often each channel appeared. Influence and prevalence are
+       different quantities, and confusing them is the most common way
+       attribution goes wrong. In <b>The last-touch trap</b> below, branded
+       search turns up in nearly two thirds of journeys and is worth about 7%.
+       Every model in the suite over-credits it — including the counterfactual
+       ones — because a channel present in almost every journey looks
+       indispensable to any method that asks what happens when you remove it.</p>
+  </details>
+</div>
+
 {% for s in samples %}
 <div class="card">
   <h2>{{ s.name }}</h2>
@@ -50,7 +121,9 @@
       <button type="submit">Run this dataset</button>
     </form>
     <a class="muted" href="/datasets/{{ s.slug }}.json"
-       style="align-self:center">Download JSON</a>
+       style="align-self:center">Download events</a>
+    <a class="muted" href="/datasets/{{ s.slug }}.truth.json"
+       style="align-self:center">Download answer key</a>
   </div>
 </div>
 {% endfor %}
@@ -62,6 +135,10 @@
      layer expects — <code>user_id</code>, <code>timestamp</code>,
      <code>event_type</code>, <code>channel</code>, <code>revenue</code>. Load them into
      anything.</p>
+  <p>The answer key is a small separate JSON object at
+     <code>/datasets/&lt;slug&gt;.truth.json</code>, carrying the per-channel shares
+     plus a note on what the measure means and how to score against it. Fetch it
+     alongside the events if you are benchmarking your own model elsewhere.</p>
   <p>To produce them locally instead of downloading, or to regenerate with different
      parameters:</p>
   <p><code>pip install -e "."</code> then <code>touchpath datasets --out datasets/</code></p>
