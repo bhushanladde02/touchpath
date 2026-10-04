@@ -155,7 +155,7 @@ Then, for each channel in turn, it removes that channel from the graph — walks
 
 **Why iteration rather than matrix inversion.** Journeys are short, so a fixed-point iteration converges in a handful of passes. It is numerically stable and keeps the dependency list at zero for this module.
 
-**The ``non_converting`` argument** is the part most implementations skip, and it is explained at length in :doc:`concepts`. Short version: without journeys that never converted, a channel that appears constantly in dead ends cannot be penalised, because every path in your sample ended in a conversion by definition.
+**The non_converting argument** is the part most implementations skip, and it is explained at length in :doc:`concepts`. Short version: without journeys that never converted, a channel that appears constantly in dead ends cannot be penalised, because every path in your sample ended in a conversion by definition.
 
 **Removal effects are available directly** on the result, which is often more interesting than the credit split:
 

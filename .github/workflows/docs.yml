@@ -52,6 +52,14 @@ jobs:
           fi
           echo "No documentation warnings."
 
+      # Sphinx reports nothing when inline markup is nested inside other
+      # inline markup: rST forbids it, docutils emits the inner markup as
+      # literal text, and the build exits 0. Eleven of those reached the
+      # published site before anyone read the rendered page. These tests
+      # check the generated HTML, the only place the defect is visible.
+      - name: Check the rendered output
+        run: pytest tests/test_docs.py -q
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/_build/html

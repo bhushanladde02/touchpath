@@ -125,7 +125,7 @@ The report is returned alongside the events rather than logged, so a caller cann
 | :func:`~touchpath.paths.channel_universe`        | Every channel seen, plus ``direct`` when relevant. |
 +--------------------------------------------------+----------------------------------------------------+
 
-**How ``build_paths`` works.** It first indexes touches per user into two parallel sorted lists — timestamps and channels. Then, for each conversion, it finds the window boundaries with ``bisect`` rather than scanning. Each conversion is two binary searches instead of a linear pass over that user’s events, which is what keeps the cost reasonable on large inputs.
+**How build_paths works.** It first indexes touches per user into two parallel sorted lists — timestamps and channels. Then, for each conversion, it finds the window boundaries with ``bisect`` rather than scanning. Each conversion is two binary searches instead of a linear pass over that user’s events, which is what keeps the cost reasonable on large inputs.
 
 ``models/`` — paths in, credit out
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -162,14 +162,14 @@ A request end to end
 Following “run the last-touch-trap sample” through the system:
 
 1. **Browser** posts to ``/analyze`` with ``source=sample``, ``sample=last-touch-trap``.
-2. **``load_sample()``** builds the dataset — deterministic from a fixed seed — and memoises it so later requests skip regeneration.
-3. **``ingest_records()``** parses 43,439 records into events, rejecting about 1% and recording why.
-4. **``build_paths()``** indexes touches per user and builds one ``Path`` per conversion inside the 30-day window.
-5. **``path_stats()``** produces the headline tiles.
+2. ``load_sample()`` builds the dataset — deterministic from a fixed seed — and memoises it so later requests skip regeneration.
+3. ``ingest_records()`` parses 43,439 records into events, rejecting about 1% and recording why.
+4. ``build_paths()`` indexes touches per user and builds one ``Path`` per conversion inside the 30-day window.
+5. ``path_stats()`` produces the headline tiles.
 6. **Each selected model** runs over the same paths.
-7. **``analyse()``** computes per-channel shares, the spread between models, and attaches the ground truth.
+7. ``analyse()`` computes per-channel shares, the spread between models, and attaches the ground truth.
 8. **Jinja2** renders the page; the payload is also embedded as JSON.
-9. **``dashboard.js``** reads that JSON and draws the grouped bar chart as inline SVG.
+9. ``dashboard.js`` reads that JSON and draws the grouped bar chart as inline SVG.
 
 Total: well under a second after the first request.
 

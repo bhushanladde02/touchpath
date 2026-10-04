@@ -19,9 +19,9 @@ Start here
 
 If you have ten minutes and want to understand the whole thing, read these three pages in order:
 
-1. **:doc:`overview`** — what the project is, what problem it solves, and why it exists at all.
-2. **:doc:`concepts`** — the measurement ideas the code is built on. Attribution, counterfactuals, incrementality, and why a channel can look essential and be worthless.
-3. **:doc:`architecture`** — how data moves through the system, module by module.
+1. :doc:`overview` — what the project is, what problem it solves, and why it exists at all.
+2. :doc:`concepts` — the measurement ideas the code is built on. Attribution, counterfactuals, incrementality, and why a channel can look essential and be worthless.
+3. :doc:`architecture` — how data moves through the system, module by module.
 
 Everything else is reference you can reach for when you need it.
 
