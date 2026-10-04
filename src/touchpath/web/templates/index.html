@@ -10,17 +10,13 @@
 <body>
 <div class="wrap">
 
+{% include "_nav.html" %}
+
 <header>
-  <h1>touchpath</h1>
-  <p>Multi-touch attribution for marketing measurement. Upload your event data or run the
-     built-in sample, then compare how six models split the credit — including Markov removal
-     effects and Shapley values.</p>
-  <p class="links">
-    <a href="/about">About</a>
-    <a href="/datasets">Sample data</a>
-    <a href="https://github.com/bhushanladde02/touchpath">Source on GitHub</a>
-    <a href="/docs">API docs</a>
-  </p>
+  <h1>Dashboard</h1>
+  <p>Upload your event data or run a built-in sample, then compare how seven models split the
+     credit — including Markov removal effects and Shapley values. New here?
+     <a href="/">Start with the introduction</a>.</p>
 </header>
 
 {% if error %}<div class="error">{{ error }}</div>{% endif %}
@@ -67,6 +63,75 @@
         {% if not selected or m in selected %}checked{% endif %}> {{ labels[m] }}</label>
       {% endfor %}
     </div>
+
+    <details style="margin-top:14px">
+      <summary>What is the difference between these models?</summary>
+      <table class="prose">
+        <thead>
+          <tr><th>Model</th><th>Credit goes to</th><th>Why use it</th><th>Where it misleads</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Last touch</td>
+            <td>The final touch before converting</td>
+            <td>The industry default. Simple, unambiguous, easy to reconcile with other tools.</td>
+            <td>Over-credits whatever sits closest to existing intent — branded search, retargeting.</td>
+          </tr>
+          <tr>
+            <td>First touch</td>
+            <td>The opening touch</td>
+            <td>Answers what introduced this customer to you.</td>
+            <td>Over-credits awareness channels and ignores everything that closed the sale.</td>
+          </tr>
+          <tr>
+            <td>Linear</td>
+            <td>Split evenly across the path</td>
+            <td>Makes no claim about which position mattered, which is honest.</td>
+            <td>An incidental display impression counts as much as the email that persuaded them.</td>
+          </tr>
+          <tr>
+            <td>Position 40/20/40</td>
+            <td>40% first, 40% last, 20% spread across the middle</td>
+            <td>Encodes an explicit belief: introduction and closing matter most.</td>
+            <td>That belief may be wrong for your business, and the middle is where persuasion often happens.</td>
+          </tr>
+          <tr>
+            <td>Time decay</td>
+            <td>Weighted exponentially toward the conversion</td>
+            <td>Recency as a proxy for influence. Useful for short consideration cycles.</td>
+            <td>Decays by path position rather than real elapsed time, so uneven gaps are mistreated.</td>
+          </tr>
+          <tr>
+            <td>Markov removal</td>
+            <td>Proportional to conversion probability lost if the channel did not exist</td>
+            <td><b>Counterfactual.</b> Asks the question a budget decision actually needs.</td>
+            <td>A channel present in most journeys looks indispensable regardless of influence.</td>
+          </tr>
+          <tr>
+            <td>Shapley value</td>
+            <td>Average marginal contribution across every coalition of channels</td>
+            <td><b>Counterfactual.</b> Fair-share properties: symmetry, null player, efficiency.</td>
+            <td>Expensive above ~12 channels, so it switches to sampling and rescales to tie out.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="sub" style="margin-top:14px">
+        <b>Why these seven.</b> The first five are the standard industry set — every
+        attribution tool implements them, so running them here lets you reconcile against
+        whatever you already use. The last two are counterfactual models: instead of dividing
+        credit by position, they estimate what would happen <em>without</em> a channel. They
+        are well documented in the literature and rare in open source, which is most of the
+        reason this project exists.
+      </p>
+      <p class="sub">
+        <b>Run all seven and watch the spread.</b> A channel every model treats the same way
+        is a safe budget decision. A channel where they disagree by fifteen points is a
+        decision resting on a modelling assumption nobody chose deliberately. And when every
+        model agrees but all of them are wrong — see the
+        <a href="/datasets">last-touch trap</a> — only an experiment resolves it.
+      </p>
+    </details>
   </fieldset>
 
   <div style="margin-top:18px"><button type="submit">Run attribution</button></div>
@@ -106,6 +171,52 @@
   <h2>Revenue share by model</h2>
   <p class="sub">Each model splits the same revenue differently. The wider the spread for a channel,
      the more your budget decision depends on which model you trust.</p>
+
+  <details style="margin-bottom:14px">
+    <summary>How to read this chart</summary>
+    <table class="prose" style="margin-top:12px">
+      <tbody>
+        <tr>
+          <td>One group per channel</td>
+          <td>Channels are ordered by size, largest first. Within a group there is one bar
+              per model you selected.</td>
+        </tr>
+        <tr>
+          <td>Bar height</td>
+          <td>That model's share of total revenue for that channel. Every model divides the
+              same revenue, so each model's bars sum to 100% across all channels.</td>
+        </tr>
+        {% if result.ground_truth %}
+        <tr>
+          <td>The grey bar</td>
+          <td><b>True influence</b> — the right answer. It exists only because this dataset was
+              simulated from known channel weights. Your own data has no grey bar, which is
+              exactly why trying a sample first is worth the two minutes.</td>
+        </tr>
+        <tr>
+          <td>Grey vs coloured</td>
+          <td><b>Accuracy.</b> A coloured bar far from the grey one means that model is wrong
+              about that channel, and the direction tells you how.</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td>Spread among the coloured bars</td>
+          <td><b>Consensus.</b> Bars at similar heights mean the models agree. A wide spread
+              means your budget decision rests on which model you happened to pick.</td>
+        </tr>
+        <tr>
+          <td>The trap</td>
+          <td>Agreement is not correctness. Every model can cluster tightly and all be wrong
+              together — see <a href="/datasets">The last-touch trap</a>. When that happens,
+              only a holdout experiment resolves it.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="sub" style="margin-top:12px">
+      Hover any group for exact figures, or open <b>Full table</b> below for all of them.
+    </p>
+  </details>
+
   <div class="legend" id="legend"></div>
   <div class="chart-wrap" id="shareChart"></div>
 </div>

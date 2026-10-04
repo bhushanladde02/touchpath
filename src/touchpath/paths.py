@@ -60,13 +60,18 @@ def build_paths(
     dedupe_consecutive: bool = True,
     max_path_length: int | None = None,
 ):
-    """Build one Path per conversion.
+    """Build one :class:`Path` per conversion.
 
-    lookback_days       only touches within this window before the conversion count
-                        (None means no limit)
-    dedupe_consecutive  collapse repeats of the same channel in a row, so ten
-                        impressions from one source do not swamp the path
-    max_path_length     keep only the most recent N touches
+    Args:
+        events: Parsed events, from :func:`touchpath.ingest.ingest_records`.
+        lookback_days: Only touches within this window before the conversion
+            count. ``None`` means no limit.
+        dedupe_consecutive: Collapse repeats of the same channel in a row, so
+            that ten impressions from one source do not swamp the path.
+        max_path_length: Keep only the most recent N touches. ``None`` keeps all.
+
+    Returns:
+        A list of :class:`Path`, sorted by conversion time.
     """
     index = _index_touches(events)
     window = None if lookback_days is None else timedelta(days=lookback_days)

@@ -107,13 +107,22 @@ def removal_effects(journeys):
 def attribute(paths, non_converting=None) -> AttributionResult:
     """Markov attribution over conversion paths.
 
-    paths          converting journeys (from touchpath.paths.build_paths)
-    non_converting optional list of channel tuples for journeys that never
-                   converted; including them is what lets the model penalise
-                   channels that appear in dead ends
+    Credit is allocated in proportion to each channel's removal effect: the
+    share of total conversion probability lost when that channel is removed
+    from the transition graph. Conversions with no touches at all stay with
+    ``direct``.
 
-    Credit is allocated in proportion to each channel's removal effect.
-    Conversions with no touches at all stay with 'direct'.
+    Args:
+        paths: Converting journeys, from :func:`touchpath.paths.build_paths`.
+        non_converting: Optional channel tuples for journeys that never
+            converted, from :func:`touchpath.paths.non_converting_journeys`.
+            Including them is what lets the model penalise channels that appear
+            mostly in dead ends — without them, every path in the sample ended
+            in a conversion by definition.
+
+    Returns:
+        An :class:`~touchpath.models.base.AttributionResult`. Removal effects
+        are available on ``result.meta["removal_effects"]``.
     """
     result = AttributionResult(model="markov")
 

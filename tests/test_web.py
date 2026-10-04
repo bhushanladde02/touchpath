@@ -18,8 +18,8 @@ def test_health():
     assert response.status_code == 200 and response.json()["status"] == "ok"
 
 
-def test_index_renders_the_form():
-    response = client.get("/")
+def test_dashboard_renders_the_form():
+    response = client.get("/dashboard")
     assert response.status_code == 200
     assert "Run attribution" in response.text
     assert "Shapley value" in response.text
@@ -118,3 +118,29 @@ def test_api_incrementality_validates_input():
               "control_users": 10, "control_conversions": 1},
     )
     assert bad.status_code == 400
+
+
+def test_landing_page_is_the_introduction():
+    """A first-time visitor should meet the explanation, not the controls."""
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "Run attribution" not in response.text
+    assert "Start here" in response.text        # the nav
+    assert "Try a sample dataset" in response.text
+
+
+def test_about_still_resolves():
+    assert client.get("/about").status_code == 200
+
+
+def test_every_page_carries_the_same_nav():
+    for path in ("/", "/dashboard", "/datasets", "/about"):
+        text = client.get(path).text
+        for label in ("Start here", "Dashboard", "Sample data"):
+            assert label in text, f"{label} missing from {path}"
+
+
+def test_active_tab_is_marked():
+    assert 'href="/dashboard" class="on"' in client.get("/dashboard").text
+    assert 'href="/datasets" class="on"' in client.get("/datasets").text
+    assert 'href="/" class="on"' in client.get("/").text

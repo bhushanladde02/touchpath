@@ -1,0 +1,11 @@
+{# Shared navigation. `active` is one of: about, dashboard, datasets. #}
+<nav class="topnav">
+  <a class="brand" href="/">touchpath</a>
+  <div class="navlinks">
+    <a href="/" {% if active == "about" %}class="on"{% endif %}>Start here</a>
+    <a href="/dashboard" {% if active == "dashboard" %}class="on"{% endif %}>Dashboard</a>
+    <a href="/datasets" {% if active == "datasets" %}class="on"{% endif %}>Sample data</a>
+    <a href="/docs">API</a>
+    <a href="https://github.com/bhushanladde02/touchpath">GitHub</a>
+  </div>
+</nav>

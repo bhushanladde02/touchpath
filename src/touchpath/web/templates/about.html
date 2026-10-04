@@ -10,18 +10,35 @@
 <body>
 <div class="wrap">
 
+{% include "_nav.html" %}
+
 <header>
-  <h1>About touchpath</h1>
+  <h1>touchpath</h1>
   <p>An open-source multi-touch attribution engine, and a place to run your own
-     marketing data through six models at once without buying anything or signing
+     marketing data through seven models at once without buying anything or signing
      up for anything.</p>
-  <p class="links">
-    <a href="/">Dashboard</a>
-    <a href="/datasets">Sample data</a>
-    <a href="https://github.com/bhushanladde02/touchpath">Source on GitHub</a>
-    <a href="/docs">API docs</a>
-  </p>
 </header>
+
+<div class="wayfinder">
+  <a href="/datasets">
+    <div class="step">Step 1</div>
+    <div class="what">Try a sample dataset</div>
+    <div class="why">Five datasets with a known right answer, so you can see which
+      models get close and which do not. Start with <b>The last-touch trap</b>.</div>
+  </a>
+  <a href="/dashboard">
+    <div class="step">Step 2</div>
+    <div class="what">Run your own data</div>
+    <div class="why">Upload a JSON, CSV or TSV event file. Parsed in memory,
+      analysed, discarded. Nothing is stored.</div>
+  </a>
+  <a href="#your-data">
+    <div class="step">Step 3</div>
+    <div class="what">Check the format first</div>
+    <div class="why">Four fields for a touch, five for a conversion. Different
+      field names are fine — see below.</div>
+  </a>
+</div>
 
 <div class="card">
   <h2>The problem</h2>
@@ -44,7 +61,7 @@
   <h2>What you can do here</h2>
   <p class="sub">All of it free, and none of it stored.</p>
   <ul>
-    <li><b>Run your own event data</b> through six attribution models at once, and
+    <li><b>Run your own event data</b> through seven attribution models at once, and
         see where they disagree. The disagreement is the useful part: a channel
         every model treats the same way is a safe budget decision, and a channel
         with a fifteen-point spread is a decision resting on a modelling
@@ -76,7 +93,7 @@
      can see what it does before deciding whether it is worth installing.</p>
 </div>
 
-<div class="card">
+<div class="card" id="your-data">
   <h2>Bring your own data</h2>
   <p class="sub">What the format needs to be.</p>
   <p>JSON, JSONL, CSV or TSV. Each row is one event. Touches need
@@ -108,7 +125,7 @@
 
 <footer>
   Built by <a href="https://github.com/bhushanladde02">Bhushan Ladde</a> · MIT licensed ·
-  <a href="/">run an analysis</a>
+  <a href="/dashboard">run an analysis</a>
 </footer>
 
 </div>

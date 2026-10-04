@@ -37,14 +37,26 @@ def generate_events(
     seed: int = 42,
     start: datetime | None = None,
 ):
-    """Simulate journeys and return (records, ground_truth).
+    """Simulate journeys and return ``(records, ground_truth)``.
 
-    records       list of dicts, ready for touchpath.ingest_records
-    ground_truth  {channel: share of true influence} - what a perfect model
-                  would recover
+    Args:
+        users: How many user journeys to simulate.
+        days: Length of the simulated period.
+        channels: ``{name: (frequency, influence)}``. Frequency is how often the
+            channel appears in a journey; influence is how much it moves the odds
+            of conversion. Defaults to a balanced six-channel mix.
+        base_conversion_rate: Conversion probability before any channel influence.
+        revenue_mean: Mean of the lognormal revenue distribution.
+        corruption_rate: Share of rows to damage, so a pipeline can be tested
+            against dirty input rather than a clean fixture.
+        seed: Fixed for reproducibility.
+        start: First timestamp in the simulated period.
 
-    corruption_rate injects malformed records at that rate, so a pipeline can
-    be tested against dirty input rather than a clean fixture.
+    Returns:
+        A tuple of ``records`` (dicts ready for
+        :func:`touchpath.ingest.ingest_records`) and ``ground_truth``
+        (``{channel: share of true influence}`` — what a perfect model would
+        recover).
     """
     rng = random.Random(seed)
     channels = channels or DEFAULT_CHANNELS

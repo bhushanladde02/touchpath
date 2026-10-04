@@ -1,0 +1,9 @@
+/* Tighten the default furo table styling so wide comparison tables stay readable. */
+table.docutils { font-size: 0.92em; }
+table.docutils td, table.docutils th { padding: 0.4rem 0.6rem; }
+
+/* Give the sidebar a little more room for the long section names. */
+.sidebar-drawer { width: 17rem; }
+@media (min-width: 82em) {
+  .content { max-width: 52rem; }
+}

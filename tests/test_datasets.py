@@ -149,7 +149,7 @@ def test_analyze_runs_a_sample():
 
 
 def test_dashboard_offers_the_samples():
-    response = client.get("/")
+    response = client.get("/dashboard")
     assert response.status_code == 200
     for sample in datasets.SAMPLES:
         assert sample.name in response.text

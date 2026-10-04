@@ -62,6 +62,48 @@ body {
 
 .wrap { max-width: 1100px; margin: 0 auto; }
 
+/* ------------------------------------------------------------------- nav */
+.topnav {
+  display: flex; align-items: center; gap: 24px;
+  padding: 14px 0 0; margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.topnav .brand {
+  font-weight: 700; font-size: 15px; letter-spacing: -0.01em;
+  color: var(--text-primary); text-decoration: none;
+  padding-bottom: 12px;
+}
+.topnav .navlinks { display: flex; gap: 4px; flex-wrap: wrap; }
+.topnav .navlinks a {
+  color: var(--text-secondary); text-decoration: none; font-size: 14px;
+  padding: 6px 12px 12px; border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.topnav .navlinks a:hover { color: var(--text-primary); }
+.topnav .navlinks a.on {
+  color: var(--text-primary); font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+/* A short orientation strip under the nav on the landing page. */
+.wayfinder {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px; margin: 18px 0 22px;
+}
+.wayfinder a {
+  display: block; text-decoration: none; color: inherit;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px;
+}
+.wayfinder a:hover { border-color: var(--accent); }
+.wayfinder .step {
+  font-size: 11px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.wayfinder .what { font-weight: 650; margin: 3px 0 4px; color: var(--text-primary); }
+.wayfinder .why { font-size: 13px; color: var(--text-secondary); }
+
 header { padding: 32px 0 20px; }
 header h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
 header p { margin: 6px 0 0; color: var(--text-secondary); max-width: 62ch; }
@@ -144,6 +186,11 @@ button:hover { filter: brightness(1.07); }
 table { border-collapse: collapse; width: 100%; font-size: 13px; }
 th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--border); }
 th:first-child, td:first-child { text-align: left; }
+
+/* Tables of prose rather than numbers: left-align everything and give the
+   rows room to breathe, since the cells wrap to several lines. */
+table.prose th, table.prose td { text-align: left; vertical-align: top; padding: 9px 14px 9px 0; }
+table.prose td:first-child { font-weight: 600; white-space: nowrap; padding-right: 18px; }
 thead th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; }
 tbody tr:hover { background: var(--surface-2); }
 td.channel { display: flex; align-items: center; gap: 8px; }

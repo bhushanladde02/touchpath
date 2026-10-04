@@ -10,17 +10,14 @@
 <body>
 <div class="wrap">
 
+{% include "_nav.html" %}
+
 <header>
   <h1>Sample data</h1>
   <p>Five datasets with a known answer key. Real attribution data has no ground
      truth — you can compare models to each other, but never tell which one was
      closer to right. These are simulated from explicit channel influence weights,
      so the truth is recorded and every model gets scored against it.</p>
-  <p class="links">
-    <a href="/">Dashboard</a>
-    <a href="/about">About</a>
-    <a href="https://github.com/bhushanladde02/touchpath">Source on GitHub</a>
-  </p>
 </header>
 
 {% for s in samples %}

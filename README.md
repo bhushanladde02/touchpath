@@ -4,6 +4,11 @@ Multi-touch attribution for marketing measurement — heuristic, Markov-chain an
 
 Pure Python, one dependency (DuckDB, and only for Parquet). Runs on a laptop.
 
+**Try it: [touchpath.onrender.com](https://touchpath.onrender.com)** — run the
+[sample datasets](https://touchpath.onrender.com/datasets) or upload your own
+event file. Nothing is stored. Hosted on a free tier, so the first request after
+an idle period takes up to a minute to wake the instance.
+
 ```bash
 pip install -e .
 touchpath demo
@@ -180,6 +185,21 @@ docker build -t touchpath . && docker run -p 8000:8000 touchpath
 
 For a permanent deployment on a free Oracle Cloud instance with a real hostname
 and HTTPS — no cold starts, no sleeping — see [DEPLOY.md](DEPLOY.md).
+
+---
+
+## Documentation
+
+Full documentation lives in `docs/` — what the project is for, every concept it
+rests on, each model with its failure modes, the code flow module by module,
+input formats and sample data, the CLI and API reference, deployment, and a
+glossary.
+
+```bash
+pip install -e ".[docs]"
+sphinx-build -b html docs docs/_build/html
+open docs/_build/html/index.html
+```
 
 ---
 

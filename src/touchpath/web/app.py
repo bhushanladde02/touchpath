@@ -160,7 +160,24 @@ def load_sample(slug: str):
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request):
+def landing(request: Request):
+    """The front door.
+
+    A first-time visitor arriving at an attribution dashboard has no idea what
+    the models are or which one to trust, so the entry point explains the
+    project before offering the controls. The dashboard lives at /dashboard.
+    """
+    return templates.TemplateResponse(request, "about.html", {"active": "about"})
+
+
+@app.get("/about", response_class=HTMLResponse)
+def about(request: Request):
+    """Kept so older links still work."""
+    return templates.TemplateResponse(request, "about.html", {"active": "about"})
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard(request: Request):
     return templates.TemplateResponse(
         request,
         "index.html",
@@ -169,19 +186,17 @@ def index(request: Request):
             "models": ALL_MODELS,
             "labels": MODEL_LABELS,
             "samples": sample_data.catalogue(),
+            "active": "dashboard",
         },
     )
-
-
-@app.get("/about", response_class=HTMLResponse)
-def about(request: Request):
-    return templates.TemplateResponse(request, "about.html", {})
 
 
 @app.get("/datasets", response_class=HTMLResponse)
 def datasets_page(request: Request):
     return templates.TemplateResponse(
-        request, "datasets.html", {"samples": sample_data.catalogue()}
+        request,
+        "datasets.html",
+        {"samples": sample_data.catalogue(), "active": "datasets"},
     )
 
 
@@ -243,6 +258,7 @@ async def analyze_form(
             "lookback_days": lookback_days,
             "samples": sample_data.catalogue(),
             "chosen_sample": sample,
+            "active": "dashboard",
         },
     )
 

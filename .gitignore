@@ -11,9 +11,12 @@ data/
 *.duckdb
 *.parquet
 
-# generated sample data
-events.json
+# Sphinx
+docs/_build/
 
 # IDE
 .idea/
 .vscode/
+
+# local scratch output
+events.json
