@@ -1,0 +1,67 @@
+name: docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Pages needs these; the default GITHUB_TOKEN is read-only for contents.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time. Queued rather than cancelled, so a push that lands
+# mid-deploy still publishes instead of being dropped.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[docs,web]"
+
+      # Not -W. Sphinx emits "failed to reach any of the inventories" untyped
+      # when docs.python.org is briefly unreachable, suppress_warnings cannot
+      # target it, and losing a docs deploy to someone else's network blip is
+      # worse than the warning it guards against. So: build, then fail on any
+      # warning that is not that one.
+      - name: Build
+        run: python -m sphinx -b html --keep-going docs docs/_build/html 2>&1 | tee build.log
+
+      # Real warnings are prefixed with the source path
+      # ("docs/glossary.rst:161: WARNING: ..."), so match the marker anywhere
+      # in the line rather than anchoring it. The intersphinx one is the sole
+      # exemption and is matched on its full text, not on a loose word.
+      - name: Fail on documentation warnings
+        run: |
+          if grep -E '(WARNING|ERROR):' build.log \
+             | grep -v 'failed to reach any of the inventories'; then
+            echo "::error::Sphinx reported the problems above."
+            exit 1
+          fi
+          echo "No documentation warnings."
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

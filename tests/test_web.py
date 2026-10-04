@@ -144,3 +144,12 @@ def test_active_tab_is_marked():
     assert 'href="/dashboard" class="on"' in client.get("/dashboard").text
     assert 'href="/datasets" class="on"' in client.get("/datasets").text
     assert 'href="/" class="on"' in client.get("/").text
+
+
+def test_nav_separates_the_guide_from_the_api_reference():
+    """Two different things once both sat behind a link called 'API': the
+    Sphinx guide and FastAPI's generated OpenAPI page."""
+    page = client.get("/dashboard").text
+    assert "bhushanladde02.github.io/touchpath" in page
+    assert ">Docs<" in page
+    assert ">API reference<" in page

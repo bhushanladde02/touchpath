@@ -40,6 +40,14 @@ intersphinx_mapping = {
 }
 
 # ------------------------------------------------------------------- theme
+# Sphinx emits the "failed to reach any of the inventories" warning untyped,
+# so suppress_warnings cannot target it and -W would fail the docs deploy over
+# an unreachable docs.python.org. The CI workflow filters that one line out
+# instead and fails on everything else. Keep the timeout short so a dead
+# inventory host costs seconds, not minutes.
+intersphinx_timeout = 10
+
+html_baseurl = "https://bhushanladde02.github.io/touchpath/"
 html_theme = "furo"
 html_title = "touchpath"
 html_static_path = ["_static"]

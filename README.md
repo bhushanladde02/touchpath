@@ -9,6 +9,10 @@ Pure Python, one dependency (DuckDB, and only for Parquet). Runs on a laptop.
 event file. Nothing is stored. Hosted on a free tier, so the first request after
 an idle period takes up to a minute to wake the instance.
 
+**Documentation: [bhushanladde02.github.io/touchpath](https://bhushanladde02.github.io/touchpath/)**
+— the concepts, every model and why it was chosen, the data format, the code
+flow, and deployment.
+
 ```bash
 pip install -e .
 touchpath demo
