@@ -172,6 +172,39 @@
   <p class="sub">Each model splits the same revenue differently. The wider the spread for a channel,
      the more your budget decision depends on which model you trust.</p>
 
+  <div class="provenance">
+    <div class="pv-row">
+      <span class="pv-key">Data</span>
+      <span class="pv-val"><b>{{ result.source.label }}</b> — {{ result.source.detail }}</span>
+    </div>
+    <div class="pv-row">
+      <span class="pv-key">Analysed</span>
+      <span class="pv-val">
+        {{ "{:,}".format(result.ingest.accepted) }} events from
+        {{ "{:,}".format(result.users) }} users ·
+        {{ result.window.first }} to {{ result.window.last }} ({{ result.window.days }} days) ·
+        {{ result.lookback_days }}-day lookback
+        {%- if result.ingest.rejected %} ·
+        {{ "{:,}".format(result.ingest.rejected) }} rows rejected ({{ result.ingest.reject_rate }}%)
+        {%- endif %}
+      </span>
+    </div>
+    <div class="pv-row">
+      <span class="pv-key">Models</span>
+      <span class="pv-val">
+        {% for m in result.models_run %}{{ labels[m] }}{% if not loop.last %} · {% endif %}{% endfor %}
+      </span>
+    </div>
+    <div class="pv-row">
+      <span class="pv-key">Answer key</span>
+      <span class="pv-val">
+        {%- if result.source.truth %}{{ result.source.truth }}
+        {%- else %}none — real data has no known answer, so the grey bar is absent and the
+          models can only be compared to each other{% endif %}
+      </span>
+    </div>
+  </div>
+
   <details style="margin-bottom:14px">
     <summary>How to read this chart</summary>
     <table class="prose" style="margin-top:12px">

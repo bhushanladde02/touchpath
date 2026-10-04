@@ -222,3 +222,34 @@ footer a { color: var(--accent); }
   .split { grid-template-columns: 1fr; }
   .chart-wrap { height: 460px; }
 }
+
+/* Provenance strip above the chart. A chart with no statement of what produced
+   it invites the reader to assume it is whatever they last clicked. */
+.provenance {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  background: var(--surface-2);
+}
+.provenance .pv-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+.provenance .pv-row + .pv-row { margin-top: 5px; }
+.provenance .pv-key {
+  flex: 0 0 82px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.provenance .pv-val { flex: 1 1 auto; }
+
+@media (max-width: 620px) {
+  .provenance .pv-row { display: block; }
+  .provenance .pv-key { display: block; margin-bottom: 1px; }
+}

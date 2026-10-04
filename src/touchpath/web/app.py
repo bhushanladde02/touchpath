@@ -123,7 +123,21 @@ def analyse(records, lookback_days: int, model_names, ground_truth=None) -> dict
         values = [s["share"][index] for s in series]
         spread[channel] = round(max(values) - min(values), 2)
 
+    # Provenance, derived from the events themselves rather than from the form.
+    # A chart with no statement of what produced it invites the reader to assume
+    # it is whatever they last clicked, which is how the demo run and a sample
+    # run get confused for each other - they share channel names but not weights.
+    stamps = [event.ts for event in events]
+    users_seen = len({event.user_id for event in events})
+
     payload = {
+        "window": {
+            "first": min(stamps).strftime("%d %b %Y"),
+            "last": max(stamps).strftime("%d %b %Y"),
+            "days": (max(stamps) - min(stamps)).days + 1,
+        },
+        "users": users_seen,
+        "models_run": list(model_names),
         "ingest": {
             "total": report.total,
             "accepted": report.accepted,
@@ -253,17 +267,45 @@ async def analyze_form(
             if events_file is None or not events_file.filename:
                 raise HTTPException(400, "choose a file, or run on the demo data")
             records = parse_upload(await events_file.read(), events_file.filename)
-            dataset = events_file.filename
+            origin = {
+                "kind": "upload",
+                "label": events_file.filename,
+                "detail": "your own file, parsed in memory and discarded after this request",
+                "truth": None,
+            }
         elif source == "sample":
             records, ground_truth = load_sample(sample)
-            dataset = sample_data.BY_SLUG[sample].name
+            meta = sample_data.BY_SLUG[sample]
+            origin = {
+                "kind": "sample",
+                "label": meta.name,
+                # No user count here: the Analysed row below carries the real
+                # one from the data. Two different user figures on one screen
+                # reads as a contradiction rather than as request-vs-actual.
+                "detail": (
+                    f"sample dataset {meta.slug} · {len(meta.channels)} channels · "
+                    f"seed {meta.seed}"
+                ),
+                "truth": f"recorded answer key for {meta.slug}",
+            }
         else:
             users = max(500, min(demo_users, 100_000))
             records, ground_truth = generate_events(users=users, corruption_rate=0.03, seed=11)
-            dataset = f"demo data ({users:,} users)"
+            origin = {
+                "kind": "demo",
+                "label": "Demo (synthetic)",
+                "detail": (
+                    "generator defaults · seed 11 · 3% damaged rows"
+                ),
+                "truth": (
+                    "the generator's own channel weights — these differ from every "
+                    "sample dataset, so figures here will not match a sample's answer key"
+                ),
+            }
 
         payload = analyse(records, lookback_days, selected, ground_truth)
-        payload["dataset"] = dataset
+        payload["source"] = origin
+        payload["dataset"] = origin["label"]
     except HTTPException as exc:
         error = exc.detail
 

@@ -43,6 +43,26 @@ What the dashboard shows
 
 **Headline tiles** — conversions, revenue, average and maximum path length, channel count, and the rejected-row percentage.
 
+**Provenance strip** — directly above the chart, four lines stating what produced the figures below it:
+
+.. code:: text
+
+   DATA        Retail baseline — sample dataset retail-baseline · 6 channels ·
+               seed 7
+   ANALYSED    25,878 events from 15,250 users · 01 Jan 2026 to 15 Mar 2026
+               (74 days) · 30-day lookback · 517 rows rejected (1.96%)
+   MODELS      Last touch · First touch · Linear · Position 40/20/40 ·
+               Time decay · Markov removal · Shapley value
+   ANSWER KEY  recorded answer key for retail-baseline
+
+Everything on the ``ANALYSED`` line is derived from the events themselves after ingestion, not from the submitted form — the date window comes from the minimum and maximum event timestamps, the user count from distinct ``user_id`` values, the row counts from the ingest report.
+
+This exists because the demo source and the sample datasets share channel names but not channel weights. The demo's ``paid_search`` has a true influence of 39.0%; ``retail-baseline``'s is 33.08%. A chart with no statement of its origin gets read as whichever source the viewer last clicked, and the two answer keys silently disagree. The demo's ``ANSWER KEY`` line says so explicitly.
+
+Note what the ``DATA`` line deliberately leaves out. A sample declares 20,000 journeys while the data holds 15,250 distinct users, and declares a 60-day spread while the events span 74 days. In both cases the declared figure is the *request* and the measured one is what the generator actually produced; shown side by side they read as a contradiction rather than as the two different quantities they are. Only the measured figures appear. ``test_only_one_user_count_is_shown`` and ``test_declared_days_is_not_the_observed_window`` pin this.
+
+The ``days`` parameter is the specific trap here: it spreads journey *start* times over ``0`` to ``days * 0.7``, but touches are then spaced by an exponential draw averaging 2.5 days and the conversion lags the last touch again, so the observed window routinely runs a fortnight past ``days``. It is not the length of the output. :func:`touchpath.generate.generate_events` says so in its docstring, and the sample data page labels the column *Start spread* rather than *Window*.
+
 **Revenue share by model** — a grouped bar chart, one group per channel, one bar per model. When ground truth exists, it appears as a distinct first bar. This is the main event: it makes disagreement visible at a glance.
 
 **Model disagreement** — the percentage-point spread between the highest and lowest model for each channel, labelled *stable*, *some spread* or *model-dependent*. This is the number that tells you how much your budget decision rests on model choice.

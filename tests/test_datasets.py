@@ -9,7 +9,7 @@ from touchpath import datasets
 from touchpath.ingest import ingest_records
 from touchpath.models import heuristic
 from touchpath.paths import build_paths, non_converting_journeys, path_stats
-from touchpath.web.app import app
+from touchpath.web.app import analyse, app
 
 client = TestClient(app)
 
@@ -234,3 +234,76 @@ def test_dashboard_offers_the_samples():
     assert response.status_code == 200
     for sample in datasets.SAMPLES:
         assert sample.name in response.text
+
+
+# ------------------------------------------------- provenance on the results
+
+
+def _run(**extra):
+    data = {"lookback_days": "30", "models": ["last", "markov"]}
+    data.update(extra)
+    return client.post("/analyze", data=data)
+
+
+def test_sample_run_names_the_dataset_above_the_chart():
+    response = _run(source="sample", sample="retail-baseline")
+    assert response.status_code == 200
+    assert "Retail baseline" in response.text
+    assert "retail-baseline" in response.text          # the slug, in the detail line
+    assert "recorded answer key" in response.text
+
+
+def test_demo_run_is_labelled_as_demo_not_as_a_sample():
+    """The demo and the samples share channel names but not weights. A chart
+    that does not say which one produced it gets read as the other."""
+    response = _run(source="demo", demo_users="2000")
+    assert response.status_code == 200
+    assert "Demo (synthetic)" in response.text
+    assert "generator defaults" in response.text
+    # and it warns that its numbers will not match a sample's answer key
+    assert "will not match a sample" in response.text
+    assert "Retail baseline" not in response.text.split("<h2>Revenue share")[1][:2000]
+
+
+def test_provenance_window_comes_from_the_events():
+    response = _run(source="sample", sample="short-paths")
+    assert response.status_code == 200
+    assert "-day lookback" in response.text
+    assert "users ·" in response.text
+
+
+def test_payload_carries_provenance_fields():
+    records, truth, _ = datasets.build("short-paths")
+    payload = analyse(records, 30, ["last"], truth)
+
+    assert payload["users"] > 0
+    assert payload["models_run"] == ["last"]
+    assert payload["window"]["days"] >= 1
+    assert payload["window"]["first"] and payload["window"]["last"]
+
+
+def test_only_one_user_count_is_shown():
+    """The strip once said '20,000 simulated users' while the row beneath it
+    said 15,250 — the request, and what the data actually holds. Both were
+    true and together they read as a contradiction. Only the real one shows."""
+    response = _run(source="sample", sample="retail-baseline")
+    strip = response.text.split('class="provenance"')[1].split("</div>\n  </div>")[0]
+    assert "20,000 simulated users" not in strip
+    assert "seed 7" in strip
+
+
+def test_declared_days_is_not_the_observed_window():
+    """`days` spreads journey starts; touch gaps and conversion lag push the
+    real span past it. The provenance strip therefore shows only the window
+    measured from the timestamps, never the declared one."""
+    records, truth, meta = datasets.build("retail-baseline")
+    payload = analyse(records, 30, ["last"], truth)
+
+    assert payload["window"]["days"] > meta.days, (
+        "if this ever stops being true the generator changed; recheck the "
+        "wording in generate_events' docstring and docs/web.rst"
+    )
+
+    response = _run(source="sample", sample="retail-baseline")
+    strip = response.text.split('class="provenance"')[1].split("</div>\n  </div>")[0]
+    assert f"{meta.days}-day simulation" not in strip

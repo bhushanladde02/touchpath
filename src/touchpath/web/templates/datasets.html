@@ -99,7 +99,7 @@
   {% if s.notes %}<p class="muted">{{ s.notes }}</p>{% endif %}
 
   <table style="margin:16px 0 18px; max-width:460px">
-    <thead><tr><th>Users</th><th>Channels</th><th>Window</th><th>Damaged rows</th></tr></thead>
+    <thead><tr><th>Journeys</th><th>Channels</th><th>Start spread</th><th>Damaged rows</th></tr></thead>
     <tbody>
       <tr>
         <td>{{ "{:,}".format(s.users) }}</td>
@@ -109,6 +109,11 @@
       </tr>
     </tbody>
   </table>
+
+  <p class="muted" style="margin:-8px 0 18px; font-size:13px">
+    Journeys <em>begin</em> within that spread; touches and the conversion carry on
+    past it, so the events usually cover a couple of weeks more. Run it and the
+    line above the chart reports the real span.</p>
 
   <div class="row">
     <form method="post" action="/analyze">

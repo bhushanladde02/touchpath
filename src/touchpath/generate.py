@@ -41,7 +41,11 @@ def generate_events(
 
     Args:
         users: How many user journeys to simulate.
-        days: Length of the simulated period.
+        days: Spread of journey *start* times, over ``0`` to ``days * 0.7``.
+            Not the span of the output: touches are spaced by an exponential
+            draw averaging 2.5 days and a conversion lags the last touch
+            again, so the observed window routinely exceeds ``days`` by a
+            fortnight or more. Read the real span off the event timestamps.
         channels: ``{name: (frequency, influence)}``. Frequency is how often the
             channel appears in a journey; influence is how much it moves the odds
             of conversion. Defaults to a balanced six-channel mix.
