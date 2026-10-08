@@ -4,6 +4,7 @@ Two surfaces over the same core:
 
     GET  /                     the dashboard
     POST /analyze              form submission -> rendered dashboard
+    POST /report.pdf           the result on screen, as a downloadable report
     POST /api/analyze          JSON in, JSON out
     POST /api/incrementality   holdout statistics
     GET  /healthz              liveness
@@ -18,10 +19,11 @@ from __future__ import annotations
 import csv
 import io
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -31,9 +33,11 @@ from ..incrementality import holdout_test
 from ..ingest import ingest_records
 from ..models import heuristic, markov, shapley
 from ..paths import build_paths, path_stats
+from .report import PayloadError, render_report
 
 HERE = Path(__file__).parent
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+MAX_REPORT_BYTES = 2 * 1024 * 1024
 ALL_MODELS = ("last", "first", "linear", "position", "time_decay", "markov", "shapley")
 MODEL_LABELS = {
     "last": "Last touch",
@@ -214,6 +218,39 @@ def datasets_page(request: Request):
     )
 
 
+@app.get("/datasets/{slug}.report.pdf")
+def download_sample_report(slug: str):
+    """A finished report for one sample, in a single click.
+
+    The dashboard export needs a run on screen first. This does not: it builds
+    the sample, analyses it with every model and returns the PDF, so somebody
+    arriving cold can see what the tool produces without filling in a form.
+
+    Declared **above** ``/datasets/{slug}.json``, for the reason given on the
+    answer-key route below — the looser pattern would otherwise capture this as
+    ``slug="<name>.report"`` and 404. ``test_sample_report_beats_the_json_route``
+    guards the ordering.
+
+    Samples are memoised by :func:`load_sample` and seeds are fixed, so
+    repeated pulls cost one analysis each rather than a fresh simulation.
+    """
+    records, ground_truth = load_sample(slug)
+    payload = analyse(records, 30, ALL_MODELS, ground_truth)
+    meta = sample_data.BY_SLUG[slug]
+    payload["source"] = {
+        "kind": "sample",
+        "label": meta.name,
+        "detail": f"sample dataset {meta.slug} · {len(meta.channels)} channels · seed {meta.seed}",
+        "truth": f"recorded answer key for {meta.slug}",
+    }
+    payload["dataset"] = meta.name
+    return Response(
+        content=render_report(payload),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="touchpath-{slug}.pdf"'},
+    )
+
+
 @app.get("/datasets/{slug}.truth.json")
 def download_truth(slug: str):
     """The answer key for one sample.
@@ -324,6 +361,48 @@ async def analyze_form(
             "chosen_sample": sample,
             "active": "dashboard",
         },
+    )
+
+
+def _report_filename(payload: dict) -> str:
+    """A filename a person can find again a week later."""
+    source = payload.get("source") or {}
+    label = source.get("label") or payload.get("dataset") or "attribution"
+    slug = "".join(char.lower() if char.isalnum() else "-" for char in label)
+    slug = "-".join(part for part in slug.split("-") if part)[:48] or "attribution"
+    return f"touchpath-{slug}-{datetime.now(timezone.utc):%Y%m%d}.pdf"
+
+
+@app.post("/report.pdf")
+async def report_pdf(payload: str = Form(...)):
+    """Render the analysis currently on screen as a downloadable PDF.
+
+    The page posts its own result payload back rather than the server
+    re-running anything. An uploaded file is parsed in memory and discarded
+    when that request ends, so there is nothing to re-analyse by the time a
+    report is asked for; taking the payload means demo, sample and upload runs
+    all travel the same path, and the PDF cannot drift from what was shown.
+
+    Nothing here trusts the body. It arrives from a browser the server does not
+    control, so it is size-capped before parsing and shape-checked after.
+    """
+    if len(payload) > MAX_REPORT_BYTES:
+        raise HTTPException(413, "that result is too large to render as a report")
+
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError:
+        raise HTTPException(400, "report payload must be JSON")
+
+    try:
+        pdf = render_report(data)
+    except PayloadError as exc:
+        raise HTTPException(400, str(exc))
+
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{_report_filename(data)}"'},
     )
 
 

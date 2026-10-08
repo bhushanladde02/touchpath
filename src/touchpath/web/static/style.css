@@ -158,6 +158,19 @@ button {
 }
 button:hover { filter: brightness(1.07); }
 
+/* A quieter button for actions that leave the page rather than drive it. */
+button.secondary {
+  background: var(--surface-2); color: var(--text-primary);
+  border: 1px solid var(--border); font-weight: 600;
+}
+button.secondary:hover { background: var(--surface-1); filter: none; }
+
+.report-form {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);
+}
+.report-form .sub { margin: 0; color: var(--text-muted); font-size: 13px; }
+
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .tile {
   background: var(--surface-1); border: 1px solid var(--border);

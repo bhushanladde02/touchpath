@@ -146,7 +146,8 @@ touchpath serve          # http://127.0.0.1:8000
 ```
 
 Pages: `/` the dashboard, `/datasets` the sample data, `/about` what the project
-is for, `/docs` the API reference.
+is for, `/docs` the API reference. Reports download from `/report.pdf` and
+`/datasets/{slug}.report.pdf`.
 
 Upload a JSON/JSONL/CSV/TSV event file or run the built-in sample, pick a lookback
 window and the models to compare, and the dashboard shows:
@@ -163,6 +164,45 @@ window and the models to compare, and the dashboard shows:
 
 Dark mode is a selected palette, not an inverted one, and the categorical colours
 are validated for colour-vision deficiency separation.
+
+### PDF reports
+
+Every run exports. **Download report (PDF)** sits directly under the provenance
+strip and produces the provenance block, the channel-by-model share table, the
+disagreement spread, Markov removal effects, and — where the data carries an
+answer key — each model scored by mean absolute error against it. Uploads
+export too; they simply carry a note explaining why scoring is unavailable
+rather than a scoreboard of nothing.
+
+Each sample also exports in one click, without running anything first:
+
+```
+GET /datasets/retail-baseline.report.pdf
+```
+
+The dashboard export posts the result payload the page already holds rather
+than re-running the analysis. That is not an optimisation — an uploaded file is
+parsed in memory and discarded when its request ends, so there is nothing left
+to re-analyse by the time a report is asked for. Posting the payload means
+demo, sample and upload runs travel one code path, and the PDF cannot drift
+from what was on screen.
+
+### Limits
+
+| | |
+|---|---|
+| Uploaded event file | 25 MB, parsed in memory and discarded |
+| Demo generator | 500 – 100,000 users |
+| Lookback window | 1 – 365 days |
+| Report payload | 2 MB posted body |
+| Report table | 200 channels, 32 models |
+
+The hosted demo runs on a free Render instance: 512 MB of memory, a shared CPU,
+and a sleep after inactivity, so the first request after a quiet spell takes
+thirty seconds or so to wake. Those bounds are set for that environment rather
+than for the library — run it yourself and the only real ceiling is your own
+memory, since paths are built in process. For a deployment with no cold starts,
+see [DEPLOY.md](DEPLOY.md).
 
 ### JSON API
 

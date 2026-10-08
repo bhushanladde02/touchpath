@@ -14,8 +14,8 @@ keywords = ["attribution", "marketing", "measurement", "mta", "markov", "shapley
 dependencies = ["duckdb>=1.0"]
 
 [project.optional-dependencies]
-web = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "jinja2>=3.1", "python-multipart>=0.0.9"]
-dev = ["pytest>=8.0", "pandas>=2.0", "httpx>=0.27", "fastapi>=0.110", "uvicorn[standard]>=0.27", "jinja2>=3.1", "python-multipart>=0.0.9"]
+web = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "jinja2>=3.1", "python-multipart>=0.0.9", "reportlab>=4.0"]
+dev = ["pytest>=8.0", "pandas>=2.0", "httpx>=0.27", "fastapi>=0.110", "uvicorn[standard]>=0.27", "jinja2>=3.1", "python-multipart>=0.0.9", "reportlab>=4.0"]
 docs = ["sphinx>=7.0", "furo>=2024.1", "sphinx-copybutton>=0.5"]
 
 [project.scripts]

@@ -36,6 +36,8 @@
     <div class="field">
       <span>Event file</span>
       <input type="file" name="events_file" accept=".json,.jsonl,.ndjson,.csv,.tsv">
+      <small class="muted">Up to 25 MB. Parsed in memory and discarded when the
+        request ends — nothing is stored.</small>
     </div>
     <div class="field">
       <span>Sample dataset</span>
@@ -205,6 +207,19 @@
     </div>
   </div>
 
+  {# High on the page on purpose. A visitor who wants the artifact rather than
+     the interface should not have to scroll past three cards to find it. A
+     plain form, not a fetch: the browser handles the download itself, the
+     payload posted is the one rendered below, and the page still works with
+     scripting switched off. #}
+  <form method="post" action="/report.pdf" class="report-form">
+    <input type="hidden" name="payload" value="{{ result_json }}">
+    <button type="submit" class="secondary">Download report (PDF)</button>
+    <span class="sub">Provenance, the full channel-by-model table, and
+      {%- if result.ground_truth %} every model scored against the answer key.
+      {%- else %} a note on why scoring is unavailable for uploaded data.{% endif %}</span>
+  </form>
+
   <details style="margin-bottom:14px">
     <summary>How to read this chart</summary>
     <table class="prose" style="margin-top:12px">
@@ -331,6 +346,7 @@
       </tbody>
     </table>
   </details>
+
 </div>
 
 <div class="card">
