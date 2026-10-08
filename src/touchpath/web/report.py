@@ -184,7 +184,7 @@ def _provenance_rows(payload: dict) -> list[list[str]]:
     truth_note = source.get("truth") or (
         "none — scoring is unavailable for this source"
         if not payload.get("ground_truth")
-        else "recorded answer key"
+        else "recorded answer key — share of converted revenue per channel"
     )
 
     return [
@@ -324,8 +324,13 @@ def render_report(payload: dict, generated_at: datetime | None = None) -> bytes:
             Paragraph("Model accuracy against the answer key", styles["h2"]),
             Paragraph(
                 "Mean absolute error in share points. The data is simulated, so "
-                "the true influence of each channel is recorded rather than "
-                "inferred, and the models can be scored instead of argued about.",
+                "the answer key records what each channel genuinely earned — "
+                "every conversion's revenue split across the channels that "
+                "caused it — and the models can be scored instead of argued "
+                "about. Zero is not reachable: damaged rows and the lookback "
+                "window hide part of what the simulation did, and a model given "
+                "the generator's own weights still scores around 0.5. Read "
+                "these against that floor.",
                 styles["body"],
             ),
             _grid(

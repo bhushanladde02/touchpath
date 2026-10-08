@@ -123,7 +123,7 @@ against it. Seeds are fixed — the same slug always produces the same data.
 | Dataset | What it shows |
 |---|---|
 | `retail-baseline` | A balanced mix where the models broadly agree. Start here. |
-| `last-touch-trap` | A channel in two thirds of journeys with 7% true influence. Last touch gives it 35% — and so does Markov removal, because prevalence is not influence and no model separates them. Only an experiment does. |
+| `last-touch-trap` | `branded_search` appears on 62% of journeys — more than anything else — and earns 14.1%. Last touch hands it 35.3%, the largest credit it gives any channel; Markov removal still gives it 30.3%. Prevalence is not influence, and no model separates them. Only an experiment does. |
 | `long-consideration` | Long paths, where position-based, time-decay and linear stop agreeing. |
 | `short-paths` | Mostly one or two touches. Every model converges; the honest case for last touch. |
 | `messy-feed` | 15% damaged rows — broken timestamps, missing ids, text revenue. Read the reject breakdown, not the chart. |
@@ -254,13 +254,33 @@ open docs/_build/html/index.html
 ```
 channel               truth      last     first    linear    markov   shapley
 -----------------------------------------------------------------------------
-affiliate              4.3%      7.1%      6.7%      6.7%      7.5%      6.7%
-display                4.7%     11.4%     11.1%     11.8%     13.0%     11.8%
-email                 15.1%     14.9%     14.1%     14.7%     14.3%     14.7%
-organic_search        19.1%     18.7%     16.2%     17.5%     18.0%     17.5%
-paid_search           39.0%     30.2%     29.8%     29.2%     27.5%     29.2%
-paid_social           17.9%     17.6%     22.2%     20.1%     19.6%     20.1%
+affiliate              5.4%      7.1%      6.7%      6.7%      7.5%      6.7%
+display                7.3%     11.4%     11.1%     11.8%     13.0%     11.8%
+email                 15.6%     14.9%     14.1%     14.7%     14.3%     14.7%
+organic_search        17.6%     18.8%     16.2%     17.5%     18.0%     17.5%
+paid_search           35.1%     30.2%     29.8%     29.2%     27.5%     29.2%
+paid_social           19.1%     17.6%     22.2%     20.1%     19.6%     20.1%
 ```
+
+**The answer key is calibrated.** It records the share of *converted revenue*
+each channel earned — every conversion's revenue split across the channels that
+caused it, in proportion to their true influence — which is deliberately the
+same quantity a model reports. The check that this holds is an oracle: hand a
+model the generator's own influence weights and it recovers the key to within
+half a share point, the residue being damaged rows and the lookback window
+hiding part of what the simulation did. Scores are read against that floor, not
+against zero. `tests/test_ground_truth.py` pins it, because an earlier version
+of this project scored models against influence-weighted *exposure* over all
+journeys instead — a different quantity over a different population — and every
+number it produced was quietly meaningless.
+
+**No model wins everywhere, and that is the finding.** On `last-touch-trap`
+Markov removal is clearly closest and last touch clearly worst. On
+`short-paths` last touch wins outright, because with one or two touches
+position really is most of the information. On the balanced samples every model
+lands within half a point of the others and the choice barely matters. A
+benchmark that crowned one model on every dataset would be measuring its own
+construction rather than the models.
 
 The models are also checked against hand-computed values: a symmetric channel pair must receive identical Shapley credit, a null player must receive none, a single-channel chain must have a removal effect of exactly 1.0, position-based must produce 40/20/40, and every model must conserve revenue exactly.
 

@@ -58,16 +58,30 @@ def generate_events(
 
     Returns:
         A tuple of ``records`` (dicts ready for
-        :func:`touchpath.ingest.ingest_records`) and ``ground_truth``
-        (``{channel: share of true influence}`` — what a perfect model would
-        recover).
+        :func:`touchpath.ingest.ingest_records`) and ``ground_truth``.
+
+        ``ground_truth`` is ``{channel: share of converted revenue}``: each
+        conversion's revenue split across the channels that caused it, in
+        proportion to their influence, then normalised. That is deliberately
+        the same quantity a model reports — revenue share over converting
+        journeys — so the two can be subtracted. Scoring a model against
+        anything else, influence-weighted exposure over all journeys for
+        instance, compares two different measurements and flatters whichever
+        model happens to track the wrong one.
     """
     rng = random.Random(seed)
     channels = channels or DEFAULT_CHANNELS
     start = start or datetime(2026, 1, 1)
 
     records = []
-    influence_total = {channel: 0.0 for channel in channels}
+    # Revenue credited to each channel for the conversions it actually helped
+    # cause. Deliberately not a count of touches: a model divides revenue among
+    # converting journeys, so the answer key has to be the same quantity over
+    # the same population or the two are not comparable. Summing influence over
+    # every journey instead would measure influence-weighted *exposure*, which
+    # includes journeys that never converted and which no attribution model is
+    # trying to estimate.
+    credited_revenue = {channel: 0.0 for channel in channels}
 
     for user_index in range(users):
         user_id = f"u{user_index:07d}"
@@ -92,7 +106,6 @@ def generate_events(
                     "event_id": f"t{len(records):08d}",
                 }
             )
-            influence_total[channel] += channels[channel][1]
 
         # conversion probability rises with the influence of channels touched
         influence = sum(channels[channel][1] for channel in touched)
@@ -101,15 +114,28 @@ def generate_events(
         if rng.random() < probability:
             offset += rng.expovariate(1 / 1.5)
             ts = journey_start + timedelta(days=offset)
+            revenue = round(rng.lognormvariate(0, 0.6) * revenue_mean, 2)
             records.append(
                 {
                     "user_id": user_id,
                     "timestamp": ts.strftime("%Y-%m-%d %H:%M:%S"),
                     "event_type": "purchase",
-                    "revenue": round(rng.lognormvariate(0, 0.6) * revenue_mean, 2),
+                    "revenue": revenue,
                     "event_id": f"c{len(records):08d}",
                 }
             )
+            # Split this conversion's revenue across the channels that produced
+            # it, in proportion to the influence that produced it. A perfect
+            # model recovers exactly this. When every touched channel has zero
+            # influence the sale happened at the base rate and no channel caused
+            # it; an even split is the least-wrong answer available, and no
+            # model could do better.
+            if influence > 0:
+                for channel in touched:
+                    credited_revenue[channel] += revenue * channels[channel][1] / influence
+            else:
+                for channel in touched:
+                    credited_revenue[channel] += revenue / len(touched)
 
     if corruption_rate > 0:
         for _ in range(int(len(records) * corruption_rate)):
@@ -127,9 +153,14 @@ def generate_events(
 
     rng.shuffle(records)
 
-    total_influence = sum(influence_total.values()) or 1.0
+    # Computed from the clean simulation, before corruption is applied. Truth
+    # is what the simulation did; corruption is a measurement problem, and the
+    # rows it destroys put a floor under how well any model can score. So does
+    # the lookback window, which clips journeys the simulation never clipped.
+    total_credited = sum(credited_revenue.values()) or 1.0
     ground_truth = {
-        channel: round(value / total_influence, 4) for channel, value in sorted(influence_total.items())
+        channel: round(value / total_credited, 4)
+        for channel, value in sorted(credited_revenue.items())
     }
     return records, ground_truth
 

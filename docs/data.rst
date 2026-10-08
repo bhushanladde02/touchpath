@@ -172,13 +172,13 @@ The **answer key** is a handful of numbers — one per channel, the share of con
 
    {
      "dataset": "last-touch-trap",
-     "measure": "share of true conversion influence, summing to 1.0",
+     "measure": "share of converted revenue, summing to 1.0",
      "ground_truth": {
-       "branded_search": 0.0704,
-       "display": 0.1841,
-       "email": 0.1105,
-       "paid_social": 0.3882,
-       "video": 0.2468
+       "branded_search": 0.1405,
+       "display": 0.2075,
+       "email": 0.1063,
+       "paid_social": 0.3371,
+       "video": 0.2086
      }
    }
 
@@ -189,7 +189,7 @@ Two reasons, and the second is the real one.
 
 First, the shapes differ. The events file has one row per *event*; the answer has one row per *channel*. They do not fit in the same table.
 
-Second, and more fundamentally, the answer is not a property of any individual event. "Paid social deserves 38.8% of the credit" is not a fact about one impression on a particular Tuesday — it is a fact about the dataset as a whole. An event log has no column in which a statement about the entire log could sit. It is the same reason a ball-by-ball cricket scorecard has no *Man of the Match* column: that is a verdict over the whole innings, recorded separately.
+Second, and more fundamentally, the answer is not a property of any individual event. "Paid social deserves 33.7% of the credit" is not a fact about one impression on a particular Tuesday — it is a fact about the dataset as a whole. An event log has no column in which a statement about the entire log could sit. It is the same reason a ball-by-ball cricket scorecard has no *Man of the Match* column: that is a verdict over the whole innings, recorded separately.
 
 Keeping it out of the events download has a practical benefit too — the records stay a plain JSON array that loads into pandas, DuckDB, R or a spreadsheet without being unwrapped first.
 

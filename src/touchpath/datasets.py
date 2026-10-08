@@ -245,19 +245,24 @@ def truth_payload(slug: str, ground_truth: dict) -> dict:
         "dataset": slug,
         "name": sample.name,
         "what_this_is": (
-            "The true share of conversion influence per channel, recorded when "
-            "this dataset was simulated. Real attribution data has no equivalent "
-            "- nobody chose the rules behind real customer behaviour, so nobody "
+            "The share of converted revenue each channel genuinely earned, "
+            "recorded when this dataset was simulated: every conversion's "
+            "revenue split across the channels that caused it, in proportion to "
+            "their true influence. Real attribution data has no equivalent - "
+            "nobody chose the rules behind real customer behaviour, so nobody "
             "can look them up. That is the only reason these samples exist."
         ),
-        "measure": "share of true conversion influence, summing to 1.0",
+        "measure": "share of converted revenue, summing to 1.0",
         "ground_truth": ground_truth,
         "how_to_score": (
             f"Run your model on the records in {sample.filename}, normalise its "
             "output to shares, and compare per channel. Mean absolute error "
             "against these values is the headline number; also check whether the "
             "model ranks the channels in the right order, which matters more for "
-            "budgeting than the decimals."
+            "budgeting than the decimals. Zero is not reachable: damaged rows "
+            "and the lookback window hide part of what the simulation did, so a "
+            "model handed the generator's own weights still scores around 0.5 "
+            "share points. Read a score against that floor, not against zero."
         ),
         "caveat": (
             "Influence here is causal by construction: how much the channel "

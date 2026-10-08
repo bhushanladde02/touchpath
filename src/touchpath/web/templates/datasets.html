@@ -29,23 +29,28 @@
      thousands of lines. This is what you feed into a model.</p>
 
   <p><b>The answer key</b> is a handful of lines — one per channel, with the
-     share of influence that channel genuinely deserves, totalling 100%. This is
-     the real one for <b>The last-touch trap</b>:</p>
+     share of the converted revenue that channel genuinely earned, totalling
+     100%. This is the real one for <b>The last-touch trap</b>:</p>
 
   <table class="prose" style="max-width:340px; margin:14px 0 18px">
     <tbody>
-      <tr><td>paid_social</td><td>38.8%</td></tr>
-      <tr><td>video</td><td>24.7%</td></tr>
-      <tr><td>display</td><td>18.4%</td></tr>
-      <tr><td>email</td><td>11.1%</td></tr>
-      <tr><td>branded_search</td><td>7.0%</td></tr>
+      <tr><td>paid_social</td><td>33.7%</td></tr>
+      <tr><td>video</td><td>20.9%</td></tr>
+      <tr><td>display</td><td>20.8%</td></tr>
+      <tr><td>branded_search</td><td>14.1%</td></tr>
+      <tr><td>email</td><td>10.6%</td></tr>
     </tbody>
   </table>
+
+  <p>Look at <code>branded_search</code>. It appears on 62% of journeys, more
+     than any other channel here, and earns 14.1%. Last touch hands it 35.3%,
+     the largest credit it gives anything, and Markov removal still gives it
+     30.3%. That gap is the trap.</p>
 
   <p>It is a second file rather than an extra column because the two have
      different shapes. The events file has one row per <em>event</em>; the answer
      has one row per <em>channel</em>. And the answer is not a property of any
-     single event — "paid social deserves 38.8%" is not true of one particular ad
+     single event — "paid social deserves 33.7%" is not true of one particular ad
      impression on a Tuesday, it is true of the dataset as a whole. There is no
      column in a log of events where a statement about the whole log could sit.</p>
 

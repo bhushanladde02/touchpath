@@ -67,7 +67,11 @@ def test_last_touch_trap_over_credits_the_closing_channel():
     paths = build_paths(events, lookback_days=30)
     last = heuristic.attribute(paths, "last").share()
 
-    assert truth["branded_search"] < 0.12
+    # It is the most prevalent channel in the sample — 62% of journeys — and
+    # still earns less than all but one of the five.
+    assert truth["branded_search"] < 0.16
+    assert sorted(truth.values()).index(truth["branded_search"]) <= 1
+
     assert last["branded_search"] > 0.25
     assert last["branded_search"] > truth["branded_search"] * 2
 
@@ -166,8 +170,12 @@ def test_answer_key_download():
     payload = response.json()
     truth = payload["ground_truth"]
     assert abs(sum(truth.values()) - 1.0) < 0.01
-    # the point of this dataset: everywhere, and worth almost nothing
-    assert truth["branded_search"] < 0.12
+    # The point of this dataset. branded_search is on 62% of journeys, more
+    # than any other channel, and still earns less than all but one of them —
+    # prevalence is not influence.
+    assert truth["branded_search"] < 0.16
+    assert truth["branded_search"] < truth["paid_social"]
+    assert truth["branded_search"] < truth["display"]
 
 
 def test_answer_key_matches_what_the_dashboard_scores_against():
@@ -187,11 +195,11 @@ def test_documented_answer_key_figures_are_still_true():
     """
     _, truth, _ = datasets.build("last-touch-trap")
     documented = {
-        "paid_social": 0.3882,
-        "video": 0.2468,
-        "display": 0.1841,
-        "email": 0.1105,
-        "branded_search": 0.0704,
+        "paid_social": 0.3371,
+        "video": 0.2086,
+        "display": 0.2075,
+        "branded_search": 0.1405,
+        "email": 0.1063,
     }
     assert truth == documented, (
         "ground truth changed — update the table in datasets.html, the JSON "
